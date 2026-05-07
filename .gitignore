@@ -3,3 +3,14 @@ src/data/raw/
 dist/
 node_modules/
 .astro/
+logs/
+tmp/
+public/last-updated.json
+public/result-metrics.json
+src/data/analyses/*.json
+!src/data/analyses/.gitkeep
+analyze
+build
+fetch
+verify
+nul
