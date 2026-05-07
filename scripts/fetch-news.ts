@@ -7,26 +7,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-// ── RSS feed list ────────────────────────────────────────────────────────────
+// ── RSS feed list (minimal, market-focused; stable endpoints) ───────────────
+/** Keep count low to avoid overfeeding the LLM; add sources only if consistently reliable. */
+const MAX_NEWS_ITEMS_OUT = 48;
+
 const RSS_FEEDS = [
-  {
-    name: 'Moneycontrol Markets',
-    urls: [
-      'https://www.moneycontrol.com/rss/marketstats.xml',
-      'https://www.moneycontrol.com/rss/business.xml',
-    ],
-  },
   {
     name: 'Economic Times Markets',
     urls: [
       'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms',
-    ],
-  },
-  {
-    name: 'Business Standard',
-    urls: [
-      'https://www.business-standard.com/rss/markets-106.rss',
-      'https://www.business-standard.com/rss/home_page_top_stories.rss',
     ],
   },
   {
@@ -36,83 +25,10 @@ const RSS_FEEDS = [
     ],
   },
   {
-    name: 'Reuters India',
+    name: 'Moneycontrol Business',
     urls: [
-      'https://feeds.reuters.com/reuters/INbusinessNews',
-      'https://feeds.reuters.com/reuters/businessNews',
-      'https://news.google.com/rss/search?q=site:reuters.com+india+business&hl=en-IN&gl=IN&ceid=IN:en',
-    ],
-  },
-  {
-    name: 'The Hindu National',
-    urls: [
-      'https://www.thehindu.com/news/national/feeder/default.rss',
-    ],
-  },
-  {
-    name: 'Indian Express',
-    urls: [
-      'https://indianexpress.com/feed/',
-    ],
-  },
-  {
-    name: 'Hindustan Times India',
-    urls: [
-      'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml',
-    ],
-  },
-  {
-    name: 'Times of India Top Stories',
-    urls: [
-      'https://timesofindia.indiatimes.com/rssfeedstopstories.cms',
-    ],
-  },
-  {
-    name: 'NDTV Top Stories',
-    urls: [
-      'https://feeds.feedburner.com/ndtvnews-top-stories',
-    ],
-  },
-  {
-    name: 'News18 India',
-    urls: [
-      'https://www.news18.com/rss/india.xml',
-    ],
-  },
-  {
-    name: 'The Wire',
-    urls: [
-      'https://thewire.in/rss',
-    ],
-  },
-  {
-    name: 'Scroll.in All',
-    urls: [
-      'https://scroll.in/feeds/all.rss',
-    ],
-  },
-  {
-    name: 'The Print',
-    urls: [
-      'https://theprint.in/feed/',
-    ],
-  },
-  {
-    name: 'LiveMint News',
-    urls: [
-      'https://www.livemint.com/rss/news',
-    ],
-  },
-  {
-    name: 'Moneycontrol Latest News',
-    urls: [
-      'https://www.moneycontrol.com/rss/latestnews.xml',
-    ],
-  },
-  {
-    name: 'PIB Press Releases',
-    urls: [
-      'https://pib.gov.in/RssMain.aspx',
+      // business.xml tends to be more available than marketstats (503/403)
+      'https://www.moneycontrol.com/rss/business.xml',
     ],
   },
 ];
@@ -174,7 +90,7 @@ async function fetchMarketauxNews(apiKey: string): Promise<NewsItem[]> {
   url.searchParams.set('published_after', toMarketauxDate(toIstCutoffIso()));
   url.searchParams.set('filter_entities', 'true');
   url.searchParams.set('group_similar', 'true');
-  url.searchParams.set('limit', '100');
+  url.searchParams.set('limit', '24');
   url.searchParams.set('sort', 'published_desc');
 
   const res = await fetch(url.toString(), {
@@ -359,11 +275,13 @@ async function main() {
     .filter((i) => isAfterYesterdayClose(i.pubDate));
 
   const deduped = sortByNewest(dedupeByTitle(filtered));
-  const marketauxUsed = deduped.filter((i) => i.provider === 'marketaux').length;
-  const rssUsed = deduped.filter((i) => i.provider === 'rss').length;
-  const finalItems = deduped;
+  const capped = deduped.slice(0, MAX_NEWS_ITEMS_OUT);
+  const marketauxUsed = capped.filter((i) => i.provider === 'marketaux').length;
+  const rssUsed = capped.filter((i) => i.provider === 'rss').length;
+  const finalItems = capped;
 
   console.log(`  After filter+dedup: ${deduped.length} items`);
+  console.log(`  Capped at ${MAX_NEWS_ITEMS_OUT}: ${finalItems.length} items`);
   console.log(`  Selected (combined sources): ${finalItems.length}`);
   console.log(`    Marketaux used: ${marketauxUsed}`);
   console.log(`    RSS used: ${rssUsed}`);
