@@ -53,9 +53,8 @@ ssh "$HOST" "bash -lc '
       git clean -fd
     fi
     if [[ \"${DEPLOY_REF}\" == origin/* ]]; then
-      BRANCH=\"${DEPLOY_REF#origin/}\"
-      git checkout \"${BRANCH}\"
-      git pull --ff-only origin \"${BRANCH}\"
+      git checkout \"${DEPLOY_REF#origin/}\"
+      git pull --ff-only origin \"${DEPLOY_REF#origin/}\"
     else
       git checkout --detach \"${DEPLOY_REF}\"
     fi
