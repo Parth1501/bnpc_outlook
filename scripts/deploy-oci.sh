@@ -10,6 +10,7 @@ set -euo pipefail
 #   DEPLOY_MODE=rsync bash scripts/deploy-oci.sh ubuntu@YOUR_OCI_IP ...
 #   DEPLOY_REF=origin/main bash scripts/deploy-oci.sh ubuntu@YOUR_OCI_IP ...
 #   CLEAN_PULL=1 bash scripts/deploy-oci.sh ubuntu@YOUR_OCI_IP ...
+#   SSH_KEY=/c/Users/parth/OneDrive/Desktop/Parth/Code/OCI/ssh-key-2025-01-01.key bash scripts/deploy-oci.sh ubuntu@YOUR_OCI_IP
 
 HOST="${1:-}"
 REMOTE_APP_DIR="${2:-/home/ubuntu/stock-outlook}"
@@ -17,6 +18,12 @@ REMOTE_WEB_ROOT="${3:-/var/www/stock-outlook}"
 DEPLOY_MODE="${DEPLOY_MODE:-pull}"   # pull | rsync
 DEPLOY_REF="${DEPLOY_REF:-origin/main}"
 CLEAN_PULL="${CLEAN_PULL:-1}"        # 1 = hard reset/clean before pull
+SSH_KEY="${SSH_KEY:-}"               # optional private key path
+SSH_OPTS=()
+
+if [[ -n "$SSH_KEY" ]]; then
+  SSH_OPTS=(-i "$SSH_KEY")
+fi
 
 if [[ -z "$HOST" ]]; then
   echo "Usage: bash scripts/deploy-oci.sh <user@host> [remote_app_dir] [remote_web_root]"
@@ -26,6 +33,7 @@ fi
 if [[ "$DEPLOY_MODE" == "rsync" ]]; then
   echo "==> Syncing repo to ${HOST}:${REMOTE_APP_DIR} (rsync mode)"
   rsync -az --delete \
+    -e "ssh ${SSH_OPTS[*]}" \
     --exclude ".git" \
     --exclude "node_modules" \
     --exclude "dist" \
@@ -36,7 +44,7 @@ else
 fi
 
 echo "==> Running remote install + build + publish"
-ssh "$HOST" "bash -lc '
+ssh "${SSH_OPTS[@]}" "$HOST" "bash -lc '
   set -euo pipefail
   cd \"${REMOTE_APP_DIR}\"
 
