@@ -40,6 +40,79 @@ const RSS_FEEDS = [
     urls: [
       'https://feeds.reuters.com/reuters/INbusinessNews',
       'https://feeds.reuters.com/reuters/businessNews',
+      'https://news.google.com/rss/search?q=site:reuters.com+india+business&hl=en-IN&gl=IN&ceid=IN:en',
+    ],
+  },
+  {
+    name: 'The Hindu National',
+    urls: [
+      'https://www.thehindu.com/news/national/feeder/default.rss',
+    ],
+  },
+  {
+    name: 'Indian Express',
+    urls: [
+      'https://indianexpress.com/feed/',
+    ],
+  },
+  {
+    name: 'Hindustan Times India',
+    urls: [
+      'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml',
+    ],
+  },
+  {
+    name: 'Times of India Top Stories',
+    urls: [
+      'https://timesofindia.indiatimes.com/rssfeedstopstories.cms',
+    ],
+  },
+  {
+    name: 'NDTV Top Stories',
+    urls: [
+      'https://feeds.feedburner.com/ndtvnews-top-stories',
+    ],
+  },
+  {
+    name: 'News18 India',
+    urls: [
+      'https://www.news18.com/rss/india.xml',
+    ],
+  },
+  {
+    name: 'The Wire',
+    urls: [
+      'https://thewire.in/rss',
+    ],
+  },
+  {
+    name: 'Scroll.in All',
+    urls: [
+      'https://scroll.in/feeds/all.rss',
+    ],
+  },
+  {
+    name: 'The Print',
+    urls: [
+      'https://theprint.in/feed/',
+    ],
+  },
+  {
+    name: 'LiveMint News',
+    urls: [
+      'https://www.livemint.com/rss/news',
+    ],
+  },
+  {
+    name: 'Moneycontrol Latest News',
+    urls: [
+      'https://www.moneycontrol.com/rss/latestnews.xml',
+    ],
+  },
+  {
+    name: 'PIB Press Releases',
+    urls: [
+      'https://pib.gov.in/RssMain.aspx',
     ],
   },
 ];

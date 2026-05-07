@@ -61,6 +61,7 @@ const DEFAULT_MODEL = 'anthropic/claude-haiku-4.5';
 const JSON_SAFE_MODEL = 'google/gemini-2.5-flash';
 const DEFAULT_SITE_URL = 'https://localhost';
 const APP_TITLE = 'Indian Market Outlook';
+const DEFAULT_ANALYZE_MAX_TOKENS = 32000;
 const SYSTEM_PROMPT =
   'You are a senior Indian equities analyst. Return ONLY valid JSON (no markdown). Be concise, data-driven, use NSE symbols, explain mechanisms, avoid buy/sell advice, and keep passthrough fields unchanged.';
 
@@ -210,6 +211,8 @@ async function callOpenRouter(
   messages: ChatMessage[],
   allowFallback = true
 ): Promise<string> {
+  const maxTokens = Number(process.env.ANALYZE_MAX_TOKENS ?? DEFAULT_ANALYZE_MAX_TOKENS);
+  const safeMaxTokens = Number.isFinite(maxTokens) && maxTokens > 0 ? Math.floor(maxTokens) : DEFAULT_ANALYZE_MAX_TOKENS;
   let delayMs = 1200;
   for (let attempt = 1; attempt <= 2; attempt++) {
     const res = await fetch(OPENROUTER_URL, {
@@ -225,9 +228,8 @@ async function callOpenRouter(
         messages,
         response_format: { type: 'json_object' },
         temperature: 0.2,
-        max_tokens: 2500,
+        max_tokens: safeMaxTokens,
       }),
-      signal: AbortSignal.timeout(90_000),
     });
 
     if (res.ok) {
@@ -448,6 +450,65 @@ function fallbackRetailPolicyImpact(notes: PolicyNote[]): RetailPolicyImpact[] {
     }));
 }
 
+function buildEmergencyAnalysis(input: {
+  date: string;
+  globalCues: unknown[];
+  fiiDii: unknown;
+  calendar: CalendarEvent[];
+  todayResults: StockResult[];
+  yesterdayReview: unknown;
+}): ReturnType<typeof AnalysisSchema.parse> {
+  const sectors = [
+    'Banking', 'Financial Services', 'IT', 'Pharmaceuticals', 'FMCG',
+    'Auto', 'Energy', 'Metals', 'Infrastructure', 'Realty',
+  ];
+  const nifty = (input.globalCues as Array<Record<string, unknown>>).find((c) => String(c.name ?? '').toLowerCase().includes('nifty'));
+  const sensex = (input.globalCues as Array<Record<string, unknown>>).find((c) => String(c.name ?? '').toLowerCase().includes('sensex'));
+  const n = typeof nifty?.value === 'number' ? nifty.value : 24000;
+  const s = typeof sensex?.value === 'number' ? sensex.value : 78000;
+
+  const analysis = {
+    date: input.date,
+    overall_bias: 'Neutral' as const,
+    confidence: 45,
+    headline_call: 'Mixed cues; follow data-driven risk management at open.',
+    summary: 'Automated fallback analysis generated because model output was unavailable/invalid. Use global cues and flows for opening bias and wait for confirmation after first 30 minutes.',
+    global_cues: Array.isArray(input.globalCues) ? input.globalCues : [],
+    key_drivers: [
+      {
+        headline: 'Model output unavailable; fallback mode enabled',
+        impact: 'Moderate' as const,
+        direction: 'Mixed' as const,
+        why_it_matters: 'Narrative generation failed, so only trusted fetched data is used for this report.',
+        sectors_affected: ['All'],
+        stocks_affected: [],
+        source: 'System',
+        time_ist: '09:00',
+      },
+    ],
+    sector_impact: sectors.map((sector) => ({
+      sector,
+      impact: 'Low' as const,
+      direction: 'Mixed' as const,
+      reason: 'No sector-specific generated narrative available; track broad index and stock-specific news flow.',
+      stocks_to_watch: [],
+    })),
+    levels: {
+      nifty: { support: [Number((n * 0.995).toFixed(0)), Number((n * 0.99).toFixed(0))], resistance: [Number((n * 1.005).toFixed(0)), Number((n * 1.01).toFixed(0))] },
+      sensex: { support: [Number((s * 0.995).toFixed(0)), Number((s * 0.99).toFixed(0))], resistance: [Number((s * 1.005).toFixed(0)), Number((s * 1.01).toFixed(0))] },
+    },
+    fii_dii: input.fiiDii,
+    economic_calendar: input.calendar,
+    risk_factors: ['R1: If global risk sentiment worsens pre-open, initial downside may extend.', 'R2: If yields/USD spike, risk assets can see pressure.'],
+    watchlist: [],
+    today_results: input.todayResults,
+    policy_notes: [],
+    retail_policy_impact: [],
+    accuracy_review: input.yesterdayReview ?? undefined,
+  };
+  return AnalysisSchema.parse(analysis);
+}
+
 async function main() {
   loadEnvFromFile();
 
@@ -455,7 +516,9 @@ async function main() {
   const model = process.env.OPENROUTER_MODEL?.trim() || DEFAULT_MODEL;
   const siteUrl = process.env.SITE_URL?.trim() || DEFAULT_SITE_URL;
 
-  if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set');
+  if (!apiKey) {
+    console.warn('  ⚠ OPENROUTER_API_KEY is not set. Using emergency fallback analysis.');
+  }
 
   const date = todayIST();
   const dayName = dayOfWeek();
@@ -490,11 +553,19 @@ async function main() {
     { role: 'user', content: userPrompt },
   ];
 
-  let lastResponse = await callOpenRouter(apiKey, model, siteUrl, messages);
+  let lastResponse = '';
   let finalData: ReturnType<typeof AnalysisSchema.parse> | null = null;
   let lastReason = 'unknown error';
+  if (apiKey) {
+    try {
+      lastResponse = await callOpenRouter(apiKey, model, siteUrl, messages);
+    } catch (e) {
+      lastReason = `Initial LLM call failed: ${(e as Error).message}`;
+      console.warn(`  ⚠ ${lastReason}`);
+    }
+  }
 
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  for (let attempt = 1; attempt <= 2 && lastResponse; attempt++) {
     try {
       const parsed = parseJsonObject(lastResponse);
       const validated = AnalysisSchema.safeParse(parsed);
@@ -511,10 +582,15 @@ async function main() {
       const correctionMsg =
         `Your last output failed: ${lastReason}. Return corrected JSON only. ` +
         'Do not use markdown. Use strict JSON with double-quoted keys and valid escaping.';
-      lastResponse = await callOpenRouter(apiKey, model, siteUrl, [
-        ...messages,
-        { role: 'user', content: correctionMsg },
-      ]);
+      try {
+        lastResponse = await callOpenRouter(apiKey!, model, siteUrl, [
+          ...messages,
+          { role: 'user', content: correctionMsg },
+        ]);
+      } catch (e) {
+        lastReason = `Correction LLM call failed: ${(e as Error).message}`;
+        break;
+      }
     }
   }
 
@@ -531,7 +607,15 @@ async function main() {
       }
     }
     if (!finalData) {
-      throw new Error(`Final output invalid after retries: ${lastReason}. Raw response saved to ${debugPath}`);
+      console.warn(`  ⚠ Falling back to emergency analysis (${lastReason}).`);
+      finalData = buildEmergencyAnalysis({
+        date,
+        globalCues: market.global_cues,
+        fiiDii: market.fii_dii,
+        calendar: normalizedCalendar,
+        todayResults: normalizedResults,
+        yesterdayReview,
+      });
     }
   }
 

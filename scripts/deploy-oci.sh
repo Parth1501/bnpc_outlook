@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Deploy latest code + static build to OCI host.
-# Default mode is pull-based deployment on server (git fetch/reset).
+# Sync latest code to OCI host.
+# Default mode is pull-based sync on server (git fetch/reset/pull).
 # Usage:
-#   bash scripts/deploy-oci.sh ubuntu@YOUR_OCI_IP /home/ubuntu/stock-outlook /var/www/stock-outlook
+#   bash scripts/deploy-oci.sh ubuntu@YOUR_OCI_IP /home/ubuntu/stock-outlook
 #
 # Optional:
 #   DEPLOY_MODE=rsync bash scripts/deploy-oci.sh ubuntu@YOUR_OCI_IP ...
@@ -14,7 +14,6 @@ set -euo pipefail
 
 HOST="${1:-}"
 REMOTE_APP_DIR="${2:-/home/ubuntu/stock-outlook}"
-REMOTE_WEB_ROOT="${3:-/var/www/stock-outlook}"
 DEPLOY_MODE="${DEPLOY_MODE:-pull}"   # pull | rsync
 DEPLOY_REF="${DEPLOY_REF:-origin/main}"
 CLEAN_PULL="${CLEAN_PULL:-1}"        # 1 = hard reset/clean before pull
@@ -26,7 +25,7 @@ if [[ -n "$SSH_KEY" ]]; then
 fi
 
 if [[ -z "$HOST" ]]; then
-  echo "Usage: bash scripts/deploy-oci.sh <user@host> [remote_app_dir] [remote_web_root]"
+  echo "Usage: bash scripts/deploy-oci.sh <user@host> [remote_app_dir]"
   exit 1
 fi
 
@@ -43,9 +42,9 @@ else
   echo "==> Using pull mode on remote (${DEPLOY_REF})"
 fi
 
-echo "==> Running remote install + build + publish"
+echo "==> Running remote code sync"
 ssh "${SSH_OPTS[@]}" "$HOST" \
-  "REMOTE_APP_DIR='${REMOTE_APP_DIR}' REMOTE_WEB_ROOT='${REMOTE_WEB_ROOT}' DEPLOY_MODE='${DEPLOY_MODE}' DEPLOY_REF='${DEPLOY_REF}' CLEAN_PULL='${CLEAN_PULL}' bash -s" <<'REMOTE_SCRIPT'
+  "REMOTE_APP_DIR='${REMOTE_APP_DIR}' DEPLOY_MODE='${DEPLOY_MODE}' DEPLOY_REF='${DEPLOY_REF}' CLEAN_PULL='${CLEAN_PULL}' bash -s" <<'REMOTE_SCRIPT'
 set -euo pipefail
 cd "$REMOTE_APP_DIR"
 
@@ -68,29 +67,7 @@ if [[ "$DEPLOY_MODE" == "pull" ]]; then
     git checkout --detach "$DEPLOY_REF"
   fi
 fi
-
-if ! command -v pnpm >/dev/null 2>&1; then
-  echo "pnpm not found on remote host. Install Node.js + pnpm first."
-  exit 1
-fi
-
-pnpm install --frozen-lockfile
-pnpm fetch-news
-pnpm fetch-market
-pnpm fetch-results
-pnpm verify
-pnpm analyze
-
-UPDATED_IST="$(TZ=Asia/Kolkata date '+%d %b %H:%M IST')"
-mkdir -p public
-printf '{ "last_updated_ist": "%s" }\n' "$UPDATED_IST" > public/last-updated.json
-
-pnpm build
-printf '{ "last_updated_ist": "%s" }\n' "$UPDATED_IST" > dist/last-updated.json
-
-mkdir -p "$REMOTE_WEB_ROOT"
-rsync -a --delete dist/ "$REMOTE_WEB_ROOT/"
-echo "Deploy complete at $(date -Iseconds) (Updated $UPDATED_IST)"
+echo "Code sync complete at $(date -Iseconds)"
 REMOTE_SCRIPT
 
 echo "==> Deployment finished"
