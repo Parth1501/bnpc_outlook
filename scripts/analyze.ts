@@ -63,7 +63,7 @@ const DEFAULT_SITE_URL = 'https://localhost';
 const APP_TITLE = 'Indian Market Outlook';
 const DEFAULT_ANALYZE_MAX_TOKENS = 32000;
 const SYSTEM_PROMPT =
-  'You are a senior Indian equities analyst. Return ONLY valid JSON (no markdown). Be concise, data-driven, use NSE symbols, explain mechanisms, avoid buy/sell advice, and keep passthrough fields unchanged.';
+  'You are a senior Indian equities analyst. Return ONLY valid JSON (no markdown). Be concise and data-grounded: never invent earnings, EPS, or YoY percentages. Use NSE symbols, explain mechanisms, avoid buy/sell advice, keep passthrough fields unchanged from input.';
 
 function loadEnvFromFile(): void {
   const envPath = path.join(process.cwd(), '.env');
@@ -116,7 +116,49 @@ type AnalysisInput = {
   calendar: unknown[];
   results: unknown[];
   yesterdayReview: unknown;
+  verifiedResults: unknown;
 };
+
+function hasDeclaredMetrics(r: StockResult): boolean {
+  if (r.result_declared !== true) return false;
+  return (
+    r.actual_eps != null ||
+    r.estimate_eps != null ||
+    r.revenue_yoy_pct != null ||
+    r.net_profit_yoy_pct != null ||
+    r.net_profit_actual != null ||
+    r.ebitda_yoy_pct != null ||
+    r.ebitda_actual != null ||
+    r.actual_revenue != null
+  );
+}
+
+/** Only metrics the model may quote as factual (from pipeline, declared results only). */
+function verifiedResultsSnapshot(results: StockResult[]): Record<string, unknown> {
+  const declared = results
+    .filter((r) => hasDeclaredMetrics(r))
+    .map((r) => {
+      const row: Record<string, unknown> = { symbol: r.symbol, company: r.company };
+      if (r.actual_eps != null) row.actual_eps = r.actual_eps;
+      if (r.estimate_eps != null) row.estimate_eps = r.estimate_eps;
+      if (r.revenue_yoy_pct != null) row.revenue_yoy_pct = r.revenue_yoy_pct;
+      if (r.net_profit_yoy_pct != null) row.net_profit_yoy_pct = r.net_profit_yoy_pct;
+      if (r.net_profit_actual != null) row.net_profit_actual = r.net_profit_actual;
+      if (r.ebitda_yoy_pct != null) row.ebitda_yoy_pct = r.ebitda_yoy_pct;
+      if (r.currency) row.currency = r.currency;
+      return row;
+    });
+  const pending = results
+    .filter((r) => !r.result_declared)
+    .slice(0, 25)
+    .map((r) => ({ symbol: r.symbol, company: r.company, timing: r.timing }));
+  return {
+    note:
+      'Quantitative earnings (EPS, PAT, YoY %, revenue) may appear ONLY for symbols in declared_with_metrics. For pending_scheduled, say results awaited/scheduled only — no outcomes. You may paraphrase <news> headlines without adding numbers not in the headline text.',
+    declared_with_metrics: declared,
+    pending_scheduled: pending,
+  };
+}
 
 function buildUserPrompt(input: AnalysisInput): string {
   const shape = {
@@ -167,8 +209,9 @@ function buildUserPrompt(input: AnalysisInput): string {
     today_results: '<use input today_results unchanged>',
   };
 
-  return `Date: ${input.date} (${input.dayName}), pre-open IST.
-Window: ${input.yesterday} 15:30 IST onwards.
+  return `Date: ${input.date} (${input.dayName}), narrative is for Indian pre-open IST.
+News window anchor: stories from ${input.yesterday} 15:30 IST onwards (see tags below).
+Global cues and FII/DII numbers are snapshots from YOUR data pipeline fetch time — they are not a live exchange tick unless the product says so. Do not imply same-day results are announced unless verified below.
 
 Use these inputs:
 <news>${JSON.stringify(input.news)}</news>
@@ -176,13 +219,19 @@ Use these inputs:
 <fii_dii>${JSON.stringify(input.fiiDii)}</fii_dii>
 <economic_calendar>${JSON.stringify(input.calendar)}</economic_calendar>
 <today_results>${JSON.stringify(input.results)}</today_results>
+<verified_results>${JSON.stringify(input.verifiedResults)}</verified_results>
 <yesterday_review>${JSON.stringify(input.yesterdayReview ?? 'no prior data')}</yesterday_review>
 
 Rules:
 - Return valid JSON only, matching schema exactly.
 - Keep global_cues, fii_dii, economic_calendar, today_results unchanged from input.
+- HARD GROUNDING: For Nifty/Sensex/Dow/Nasdaq/Brent/Gold/USD-INR/US 10Y/Nikkei etc., quote percentages and levels ONLY from <global_cues> (match by name). Do not substitute other figures from memory or news.
+- HARD GROUNDING: For company results (EPS, PAT, YoY revenue/profit margin commentary), you MAY use explicit numbers ONLY if:
+  (a) the numeric field appears for that symbol inside verified_results.declared_with_metrics, OR
+  (b) the SAME number appears verbatim in <news> title/description — quote as "reported headline" briefly, do not recalculate.
+- If a stock is only in verified_results.pending_scheduled (or not declared in today_results), you MUST NOT claim actual results or YoY/PAT outcomes. Say only "scheduled/awaited" etc.
+- If declared_with_metrics is empty, do not put company-specific quantitative earnings (no "+X% PAT YoY" etc.) in headline_call, summary, or key_drivers; use themes, flows, and global cues only.
 - Cover all 10 sectors in sector_impact (use Low if no catalyst).
-- Use concise mechanism-based reasoning with specific facts.
 - No buy/sell/target/stop-loss advice.
 - Confidence range 35-85.
 
@@ -546,6 +595,7 @@ async function main() {
     calendar: normalizedCalendar,
     results: normalizedResults,
     yesterdayReview,
+    verifiedResults: verifiedResultsSnapshot(normalizedResults),
   });
 
   const messages: ChatMessage[] = [
