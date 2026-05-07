@@ -9,11 +9,39 @@ import * as path from 'path';
 
 // ── RSS feed list ────────────────────────────────────────────────────────────
 const RSS_FEEDS = [
-  { name: 'Moneycontrol Markets',  url: 'https://www.moneycontrol.com/rss/marketstats.xml' },
-  { name: 'Economic Times Markets',url: 'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms' },
-  { name: 'Business Standard',     url: 'https://www.business-standard.com/rss/markets-106.rss' },
-  { name: 'LiveMint Markets',      url: 'https://www.livemint.com/rss/markets' },
-  { name: 'Reuters India',         url: 'https://feeds.reuters.com/reuters/INbusinessNews' },
+  {
+    name: 'Moneycontrol Markets',
+    urls: [
+      'https://www.moneycontrol.com/rss/marketstats.xml',
+      'https://www.moneycontrol.com/rss/business.xml',
+    ],
+  },
+  {
+    name: 'Economic Times Markets',
+    urls: [
+      'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms',
+    ],
+  },
+  {
+    name: 'Business Standard',
+    urls: [
+      'https://www.business-standard.com/rss/markets-106.rss',
+      'https://www.business-standard.com/rss/home_page_top_stories.rss',
+    ],
+  },
+  {
+    name: 'LiveMint Markets',
+    urls: [
+      'https://www.livemint.com/rss/markets',
+    ],
+  },
+  {
+    name: 'Reuters India',
+    urls: [
+      'https://feeds.reuters.com/reuters/INbusinessNews',
+      'https://feeds.reuters.com/reuters/businessNews',
+    ],
+  },
 ];
 
 // ── Market-relevance keywords ────────────────────────────────────────────────
@@ -180,20 +208,51 @@ function sortByNewest(items: NewsItem[]): NewsItem[] {
   });
 }
 
-async function fetchFeed(feed: { name: string; url: string }): Promise<NewsItem[]> {
-  try {
-    console.log(`  Fetching: ${feed.name}`);
-    const res = await fetch(feed.url, {
-      headers: { 'User-Agent': 'BNPC-Market-Bot/1.0' },
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const xml = await res.text();
-    return parseRssItems(xml, feed.name);
-  } catch (err) {
-    console.warn(`  ⚠ Failed ${feed.name}: ${(err as Error).message}`);
-    return [];
+async function fetchXmlWithRetry(url: string): Promise<string> {
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Accept': 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Referer': new URL(url).origin + '/',
+  };
+  let lastErr = 'unknown';
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers,
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const xml = await res.text();
+      if (!xml || xml.length < 100 || !/<rss|<feed/i.test(xml)) {
+        throw new Error('Invalid/empty feed response');
+      }
+      return xml;
+    } catch (e) {
+      lastErr = (e as Error).message;
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 600));
+    }
   }
+  throw new Error(lastErr);
+}
+
+async function fetchFeed(feed: { name: string; urls: string[] }): Promise<NewsItem[]> {
+  console.log(`  Fetching: ${feed.name}`);
+  for (const url of feed.urls) {
+    try {
+      const xml = await fetchXmlWithRetry(url);
+      const items = parseRssItems(xml, feed.name);
+      if (items.length > 0) {
+        return items;
+      }
+    } catch (err) {
+      console.warn(`    - ${url} failed: ${(err as Error).message}`);
+    }
+  }
+  console.warn(`  ⚠ Failed ${feed.name}: all feed URLs blocked/unavailable`);
+  return [];
 }
 
 async function main() {
