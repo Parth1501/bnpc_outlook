@@ -44,52 +44,53 @@ else
 fi
 
 echo "==> Running remote install + build + publish"
-ssh "${SSH_OPTS[@]}" "$HOST" "bash -lc '
-  set -euo pipefail
-  cd \"${REMOTE_APP_DIR}\"
+ssh "${SSH_OPTS[@]}" "$HOST" \
+  "REMOTE_APP_DIR='${REMOTE_APP_DIR}' REMOTE_WEB_ROOT='${REMOTE_WEB_ROOT}' DEPLOY_MODE='${DEPLOY_MODE}' DEPLOY_REF='${DEPLOY_REF}' CLEAN_PULL='${CLEAN_PULL}' bash -s" <<'REMOTE_SCRIPT'
+set -euo pipefail
+cd "$REMOTE_APP_DIR"
 
-  if [[ \"${DEPLOY_MODE}\" == \"pull\" ]]; then
-    if ! command -v git >/dev/null 2>&1; then
-      echo \"git not found on remote host.\"
-      exit 1
-    fi
-    git fetch --all --prune
-    if [[ \"${CLEAN_PULL}\" == \"1\" ]]; then
-      # OCI box contains generated artifacts (tmp/, analyses json, logs, etc.).
-      # Force-clean to avoid pull conflicts during deployment.
-      git reset --hard
-      git clean -fd
-    fi
-    if [[ \"${DEPLOY_REF}\" == origin/* ]]; then
-      git checkout \"${DEPLOY_REF#origin/}\"
-      git pull --ff-only origin \"${DEPLOY_REF#origin/}\"
-    else
-      git checkout --detach \"${DEPLOY_REF}\"
-    fi
-  fi
-
-  if ! command -v pnpm >/dev/null 2>&1; then
-    echo \"pnpm not found on remote host. Install Node.js + pnpm first.\"
+if [[ "$DEPLOY_MODE" == "pull" ]]; then
+  if ! command -v git >/dev/null 2>&1; then
+    echo "git not found on remote host."
     exit 1
   fi
+  git fetch --all --prune
+  if [[ "$CLEAN_PULL" == "1" ]]; then
+    # OCI box contains generated artifacts (tmp/, analyses json, logs, etc.).
+    # Force-clean to avoid pull conflicts during deployment.
+    git reset --hard
+    git clean -fd
+  fi
+  if [[ "$DEPLOY_REF" == origin/* ]]; then
+    git checkout "${DEPLOY_REF#origin/}"
+    git pull --ff-only origin "${DEPLOY_REF#origin/}"
+  else
+    git checkout --detach "$DEPLOY_REF"
+  fi
+fi
 
-  pnpm install --frozen-lockfile
-  pnpm fetch-news
-  pnpm fetch-market
-  pnpm fetch-results
-  pnpm verify
-  pnpm analyze
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "pnpm not found on remote host. Install Node.js + pnpm first."
+  exit 1
+fi
 
-  UPDATED_IST="\$(TZ=Asia/Kolkata date "+%d %b %H:%M IST")"
-  mkdir -p public
-  printf "{ \"last_updated_ist\": \"%s\" }\n" \"\$UPDATED_IST\" > public/last-updated.json
+pnpm install --frozen-lockfile
+pnpm fetch-news
+pnpm fetch-market
+pnpm fetch-results
+pnpm verify
+pnpm analyze
 
-  pnpm build
-  printf "{ \"last_updated_ist\": \"%s\" }\n" \"\$UPDATED_IST\" > dist/last-updated.json
+UPDATED_IST="$(TZ=Asia/Kolkata date '+%d %b %H:%M IST')"
+mkdir -p public
+printf '{ "last_updated_ist": "%s" }\n' "$UPDATED_IST" > public/last-updated.json
 
-  mkdir -p \"${REMOTE_WEB_ROOT}\"
-  rsync -a --delete dist/ \"${REMOTE_WEB_ROOT}/\"
-  echo \"Deploy complete at \$(date -Iseconds) (Updated \$UPDATED_IST)\"
-'"
+pnpm build
+printf '{ "last_updated_ist": "%s" }\n' "$UPDATED_IST" > dist/last-updated.json
+
+mkdir -p "$REMOTE_WEB_ROOT"
+rsync -a --delete dist/ "$REMOTE_WEB_ROOT/"
+echo "Deploy complete at $(date -Iseconds) (Updated $UPDATED_IST)"
+REMOTE_SCRIPT
 
 echo "==> Deployment finished"
