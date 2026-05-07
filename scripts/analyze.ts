@@ -24,6 +24,19 @@ type StockResult = {
   timing: 'During Market' | 'Post Market' | 'Pre Market' | 'TBD';
   expected_time_ist?: string;
   note?: string;
+  metric_unit?: string;
+  estimate_eps?: number | null;
+  actual_eps?: number | null;
+  estimate_revenue?: number | null;
+  actual_revenue?: number | null;
+  revenue_yoy_pct?: number | null;
+  net_profit_actual?: number | null;
+  net_profit_yoy_pct?: number | null;
+  ebitda_actual?: number | null;
+  ebitda_yoy_pct?: number | null;
+  currency?: string;
+  result_declared?: boolean;
+  result_declared_at_ist?: string;
 };
 type PolicyNote = {
   title: string;
@@ -45,8 +58,11 @@ type RetailPolicyImpact = {
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = 'anthropic/claude-haiku-4.5';
+const JSON_SAFE_MODEL = 'google/gemini-2.5-flash';
 const DEFAULT_SITE_URL = 'https://localhost';
 const APP_TITLE = 'Indian Market Outlook';
+const SYSTEM_PROMPT =
+  'You are a senior Indian equities analyst. Return ONLY valid JSON (no markdown). Be concise, data-driven, use NSE symbols, explain mechanisms, avoid buy/sell advice, and keep passthrough fields unchanged.';
 
 function loadEnvFromFile(): void {
   const envPath = path.join(process.cwd(), '.env');
@@ -89,18 +105,19 @@ function yesterdayIST(): string {
   return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 }
 
-function buildUserPrompt(input: {
+type AnalysisInput = {
   date: string;
   dayName: string;
   yesterday: string;
   news: unknown[];
   globalCues: unknown[];
-  flows: unknown;
+  fiiDii: unknown;
   calendar: unknown[];
-  todayResults: unknown[];
-  policyNotes: unknown[];
+  results: unknown[];
   yesterdayReview: unknown;
-}): string {
+};
+
+function buildUserPrompt(input: AnalysisInput): string {
   const shape = {
     date: input.date,
     overall_bias: 'Bullish|Bearish|Neutral',
@@ -147,56 +164,54 @@ function buildUserPrompt(input: {
     risk_factors: ['string'],
     watchlist: [{ symbol: 'NSE_SYMBOL', thesis: 'string', trigger: 'string' }],
     today_results: '<use input today_results unchanged>',
-    policy_notes: '<use input policy_notes unchanged>',
-    retail_policy_impact: [
-      {
-        title: 'string (must be from input policy_notes title)',
-        category: 'Taxation|Equity Market|FnO Market|Bond Market|Compliance|Other',
-        fy: 'FY YYYY-YY',
-        impact_on_retail: 'plain language, max 180 chars',
-        what_to_watch: 'one practical watch item, max 140 chars',
-        source_url: 'exact url from policy_notes',
-      },
-    ],
   };
 
-  return `Today is ${input.date} (${input.dayName}).
-News window: ${input.yesterday} 15:30 IST onwards.
+  return `Date: ${input.date} (${input.dayName}), pre-open IST.
+Window: ${input.yesterday} 15:30 IST onwards.
 
+Use these inputs:
 <news>${JSON.stringify(input.news)}</news>
 <global_cues>${JSON.stringify(input.globalCues)}</global_cues>
-<flows>${JSON.stringify(input.flows)}</flows>
-<calendar>${JSON.stringify(input.calendar)}</calendar>
-<today_results>${JSON.stringify(input.todayResults)}</today_results>
-<policy_notes>${JSON.stringify(input.policyNotes)}</policy_notes>
-<yesterday_review>${JSON.stringify(input.yesterdayReview)}</yesterday_review>
-
-Return JSON only with this shape:
-${JSON.stringify(shape, null, 2)}
+<fii_dii>${JSON.stringify(input.fiiDii)}</fii_dii>
+<economic_calendar>${JSON.stringify(input.calendar)}</economic_calendar>
+<today_results>${JSON.stringify(input.results)}</today_results>
+<yesterday_review>${JSON.stringify(input.yesterdayReview ?? 'no prior data')}</yesterday_review>
 
 Rules:
-- Cover all 10 sectors in sector_impact even if impact is Low.
-- Keep global_cues and fii_dii aligned to provided inputs.
-- Be specific and realistic; no fabricated drama when data is light.
-- Use "watch"/"in focus", never direct buy/sell advice.
-- Use NSE symbols where possible.
-- Keep output concise to avoid token overflow:
-  - key_drivers: 6 to 10 items only
-  - why_it_matters: max 160 chars
-  - sector reason: max 140 chars
-  - stocks_affected: max 5 per driver
-  - stocks_to_watch: max 3 per sector
-  - summary: max 320 chars
-- Keep today_results identical to provided input. Do not invent result entries.
-- Keep policy_notes identical to provided input. Do not invent policy/tax notes.
-- retail_policy_impact must be derived ONLY from provided policy_notes.
-- Include only items that materially affect retail participants.
-- Return 5 to 12 retail_policy_impact items, concise and actionable.`;
+- Return valid JSON only, matching schema exactly.
+- Keep global_cues, fii_dii, economic_calendar, today_results unchanged from input.
+- Cover all 10 sectors in sector_impact (use Low if no catalyst).
+- Use concise mechanism-based reasoning with specific facts.
+- No buy/sell/target/stop-loss advice.
+- Confidence range 35-85.
+
+Output schema:
+${JSON.stringify(shape)}
+`;
 }
 
-async function callOpenRouter(apiKey: string, model: string, siteUrl: string, messages: ChatMessage[]): Promise<string> {
+function compactNewsForPrompt(raw: unknown[], limit = 20): Array<Record<string, string>> {
+  return raw
+    .slice(0, limit)
+    .map((x) => x as Record<string, unknown>)
+    .map((n) => ({
+      title: String(n.title ?? '').trim().slice(0, 180),
+      source: String(n.source ?? '').trim().slice(0, 40),
+      pubDate: String(n.pubDate ?? '').trim().slice(0, 40),
+      description: String(n.description ?? '').replace(/\s+/g, ' ').trim().slice(0, 220),
+    }))
+    .filter((n) => n.title.length > 0);
+}
+
+async function callOpenRouter(
+  apiKey: string,
+  model: string,
+  siteUrl: string,
+  messages: ChatMessage[],
+  allowFallback = true
+): Promise<string> {
   let delayMs = 1200;
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
     const res = await fetch(OPENROUTER_URL, {
       method: 'POST',
       headers: {
@@ -210,7 +225,7 @@ async function callOpenRouter(apiKey: string, model: string, siteUrl: string, me
         messages,
         response_format: { type: 'json_object' },
         temperature: 0.2,
-        max_tokens: 8000,
+        max_tokens: 2500,
       }),
       signal: AbortSignal.timeout(90_000),
     });
@@ -224,7 +239,7 @@ async function callOpenRouter(apiKey: string, model: string, siteUrl: string, me
       return content;
     }
 
-    if ((res.status === 429 || res.status >= 500) && attempt < 3) {
+    if ((res.status === 429 || res.status >= 500) && attempt < 2) {
       console.warn(`  OpenRouter attempt ${attempt} failed with ${res.status}, retrying...`);
       await new Promise((r) => setTimeout(r, delayMs));
       delayMs *= 2;
@@ -232,6 +247,15 @@ async function callOpenRouter(apiKey: string, model: string, siteUrl: string, me
     }
 
     const errBody = await res.text();
+    if (
+      allowFallback &&
+      model !== JSON_SAFE_MODEL &&
+      /json mode is not supported|code.?20024/i.test(errBody)
+    ) {
+      console.warn(`  Model ${model} does not support JSON mode. Falling back to ${JSON_SAFE_MODEL}.`);
+      return callOpenRouter(apiKey, JSON_SAFE_MODEL, siteUrl, messages, false);
+    }
+
     throw new Error(`OpenRouter HTTP ${res.status}: ${errBody.slice(0, 400)}`);
   }
 
@@ -314,6 +338,19 @@ function normalizeResults(raw: unknown): StockResult[] {
       timing: normalizeTiming(r.timing),
       expected_time_ist: r.expected_time_ist == null ? undefined : String(r.expected_time_ist),
       note: r.note == null ? undefined : String(r.note),
+      metric_unit: r.metric_unit == null ? undefined : String(r.metric_unit),
+      estimate_eps: typeof r.estimate_eps === 'number' && Number.isFinite(r.estimate_eps) ? r.estimate_eps : null,
+      actual_eps: typeof r.actual_eps === 'number' && Number.isFinite(r.actual_eps) ? r.actual_eps : null,
+      estimate_revenue: typeof r.estimate_revenue === 'number' && Number.isFinite(r.estimate_revenue) ? r.estimate_revenue : null,
+      actual_revenue: typeof r.actual_revenue === 'number' && Number.isFinite(r.actual_revenue) ? r.actual_revenue : null,
+      revenue_yoy_pct: typeof r.revenue_yoy_pct === 'number' && Number.isFinite(r.revenue_yoy_pct) ? r.revenue_yoy_pct : null,
+      net_profit_actual: typeof r.net_profit_actual === 'number' && Number.isFinite(r.net_profit_actual) ? r.net_profit_actual : null,
+      net_profit_yoy_pct: typeof r.net_profit_yoy_pct === 'number' && Number.isFinite(r.net_profit_yoy_pct) ? r.net_profit_yoy_pct : null,
+      ebitda_actual: typeof r.ebitda_actual === 'number' && Number.isFinite(r.ebitda_actual) ? r.ebitda_actual : null,
+      ebitda_yoy_pct: typeof r.ebitda_yoy_pct === 'number' && Number.isFinite(r.ebitda_yoy_pct) ? r.ebitda_yoy_pct : null,
+      currency: r.currency == null ? undefined : String(r.currency).toUpperCase(),
+      result_declared: Boolean(r.result_declared),
+      result_declared_at_ist: r.result_declared_at_ist == null ? undefined : String(r.result_declared_at_ist),
     });
   }
   return out.sort((a, b) => {
@@ -431,37 +468,25 @@ async function main() {
   const market = loadJson<{ global_cues: unknown[]; fii_dii: unknown }>('raw-market.json');
   const calendar = maybeLoadJson<unknown[]>('raw-calendar.json') ?? [];
   const results = maybeLoadJson<unknown[]>('raw-results.json') ?? [];
-  const policyNotes = maybeLoadJson<unknown[]>('raw-policy-notes.json') ?? [];
   const normalizedCalendar = normalizeCalendar(calendar);
   const normalizedResults = normalizeResults(results);
-  const normalizedPolicyNotes = normalizePolicyNotes(policyNotes);
-  const policyNotesForPrompt = normalizedPolicyNotes.slice(0, 12).map((n) => ({
-    title: n.title,
-    authority: n.authority,
-    category: n.category,
-    fy: n.fy,
-    effective_from: n.effective_from,
-    source_url: n.source_url,
-  }));
   const yesterdayReview = maybeLoadJson<unknown>('yesterday-review.json');
 
-  const systemPrompt =
-    'You are a senior Indian equities analyst writing the morning market outlook for retail traders. Output ONLY valid JSON conforming to the user schema. No markdown fences. No commentary.';
+  const compactNews = compactNewsForPrompt(news, 20);
   const userPrompt = buildUserPrompt({
     date,
     dayName,
     yesterday,
-    news,
+    news: compactNews,
     globalCues: market.global_cues,
-    flows: market.fii_dii,
+    fiiDii: market.fii_dii,
     calendar: normalizedCalendar,
-    todayResults: normalizedResults,
-    policyNotes: policyNotesForPrompt,
+    results: normalizedResults,
     yesterdayReview,
   });
 
   const messages: ChatMessage[] = [
-    { role: 'system', content: systemPrompt },
+    { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content: userPrompt },
   ];
 
@@ -469,7 +494,7 @@ async function main() {
   let finalData: ReturnType<typeof AnalysisSchema.parse> | null = null;
   let lastReason = 'unknown error';
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const parsed = parseJsonObject(lastResponse);
       const validated = AnalysisSchema.safeParse(parsed);
@@ -482,13 +507,12 @@ async function main() {
       lastReason = `JSON parse error: ${(e as Error).message}`;
     }
 
-    if (attempt < 3) {
+    if (attempt < 2) {
       const correctionMsg =
         `Your last output failed: ${lastReason}. Return corrected JSON only. ` +
         'Do not use markdown. Use strict JSON with double-quoted keys and valid escaping.';
       lastResponse = await callOpenRouter(apiKey, model, siteUrl, [
         ...messages,
-        { role: 'assistant', content: lastResponse },
         { role: 'user', content: correctionMsg },
       ]);
     }
@@ -517,13 +541,8 @@ async function main() {
   }
   finalData.economic_calendar = enrichCalendarWithCountry(finalData.economic_calendar, normalizedCalendar);
   finalData.today_results = normalizedResults;
-  finalData.policy_notes = normalizedPolicyNotes;
-  const normalizedRetailImpacts = normalizeRetailPolicyImpact(
-    (finalData as { retail_policy_impact?: unknown }).retail_policy_impact,
-    normalizedPolicyNotes
-  );
-  finalData.retail_policy_impact =
-    normalizedRetailImpacts.length > 0 ? normalizedRetailImpacts : fallbackRetailPolicyImpact(normalizedPolicyNotes);
+  finalData.policy_notes = [];
+  finalData.retail_policy_impact = [];
 
   const outPath = path.join(process.cwd(), 'src', 'data', 'analyses', `${date}.json`);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });

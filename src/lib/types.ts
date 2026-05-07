@@ -75,6 +75,19 @@ export const StockResultSchema = z.object({
   timing: ResultTimingSchema,
   expected_time_ist: z.string().optional(),
   note: z.string().optional(),
+  metric_unit: z.string().optional(),
+  estimate_eps: z.number().nullable().optional(),
+  actual_eps: z.number().nullable().optional(),
+  estimate_revenue: z.number().nullable().optional(),
+  actual_revenue: z.number().nullable().optional(),
+  revenue_yoy_pct: z.number().nullable().optional(),
+  net_profit_actual: z.number().nullable().optional(),
+  net_profit_yoy_pct: z.number().nullable().optional(),
+  ebitda_actual: z.number().nullable().optional(),
+  ebitda_yoy_pct: z.number().nullable().optional(),
+  currency: z.string().optional(),
+  result_declared: z.boolean().optional(),
+  result_declared_at_ist: z.string().optional(),
 });
 
 export const PolicyCategorySchema = z.enum(['Taxation', 'Equity Market', 'FnO Market', 'Bond Market', 'Compliance', 'Other']);

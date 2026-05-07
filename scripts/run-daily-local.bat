@@ -46,12 +46,17 @@ echo ==================================================
 call :run "pnpm fetch-news" || goto :fail
 call :run "pnpm fetch-market" || goto :fail
 call :run "pnpm fetch-results" || goto :fail
-call :run "pnpm fetch-policy" || goto :fail
 call :run "pnpm verify" || goto :fail
 call :run "pnpm analyze" || goto :fail
 call :run "pnpm build" || goto :fail
 
+for /f "usebackq delims=" %%I in (`powershell -NoProfile -Command "(Get-Date).ToUniversalTime().AddHours(5.5).ToString(\"dd MMM, HH:mm\")"`) do set "UPDATED_IST=%%I IST"
+if not exist "public" mkdir "public"
+> "public\last-updated.json" echo { "last_updated_ist": "%UPDATED_IST%" }
+if exist "dist" > "dist\last-updated.json" echo { "last_updated_ist": "%UPDATED_IST%" }
+
 echo.>> "%LOG_FILE%"
+echo [INFO] last-updated.json = %UPDATED_IST%>> "%LOG_FILE%"
 echo [SUCCESS] Full flow completed.>> "%LOG_FILE%"
 echo.
 echo [SUCCESS] Full flow completed.

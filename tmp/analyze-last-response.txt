@@ -1,849 +1,155 @@
+```json
 {
   "date": "2026-05-07",
-  "overall_bias": "Bullish",
-  "confidence": 75,
-  "headline_call": "Indian markets rally on easing geopolitical tensions and strong earnings; Nifty eyes 25,000 amid positive global cues and domestic corporate performance.",
-  "summary": "Indian equities are set for a bullish day, driven by optimism surrounding a potential US-Iran peace deal, which has eased crude oil prices and boosted global markets. Strong Q4 earnings from key companies like Bajaj Auto, MRF, and Polycab, coupled with positive FII flows and a rally in AI-linked tech stocks globally, are providing significant upward momentum. Banking and auto sectors are expected to lead gains.",
+  "overall_bias": "Neutral",
+  "confidence": "58",
+  "headline_call": "Indian markets consolidate amid global optimism; rupee gains on oil decline; earnings season mixed with strong results from BSE, DABUR, MRF offsetting broader index weakness.",
+  "summary": "Nifty50 flat (-0.02%) while Sensex down 0.15% reflects divergence between large-cap weakness and midcap/smallcap strength. Global tailwinds (US futures +1-2%, Nikkei +5.58% on Iran peace hopes, oil -3.49%) support sentiment but FII net selling (-340.89cr) and SEBI regulatory actions (IRRA platform discontinuation, Indiabulls settlement) create headwinds. Rupee strengthens 0.99% to 94.24 on crude decline. Earnings season shows pockets of strength: BSE +61% profit YoY, DABUR +16% YoY, MRF +37% YoY, but broader market consolidation persists. DII support (+441.07cr) partially offsets FII outflows.",
   "key_drivers": [
     {
-      "headline": "US-Iran Peace Deal Hopes Ease Crude Oil Prices, Boost Global Markets",
+      "headline": "US-Iran peace deal optimism lifts global equities; Nikkei hits record high +5.58%",
       "impact": "High",
       "direction": "Positive",
-      "why_it_matters": "Prospects of a US-Iran peace deal are reducing geopolitical risks, leading to a significant drop in crude oil prices, which is highly beneficial for India's import-dependent economy.",
-      "sectors_affected": [
-        "Automobile",
-        "Logistics",
-        "Aviation",
-        "Chemicals"
-      ],
-      "stocks_affected": [
-        "BAJAJAUTO",
-        "MRF",
-        "ASHOKLEY"
-      ],
-      "source": "LiveMint Markets",
-      "time_ist": "09:37"
+      "why_it_matters": "De-escalation reduces geopolitical risk premium, supports risk-on sentiment globally. Dow +1.24%, Nasdaq +2.02% signal broad-based strength. Mechanism: lower oil prices (Brent -3.49% to $97.74) ease inflation concerns, supporting equity valuations.",
+      "sectors_affected": ["Energy", "Financials", "IT"],
+      "stocks_affected": ["ADANIGREEN", "RELIANCE", "INFY"],
+      "source": "LiveMint Markets, Economic Times Markets",
+      "time_ist": "17:48"
     },
     {
-      "headline": "RBI Clears Kotak Mahindra Bank to Acquire up to 9.99% in Federal Bank and AU Small Finance Bank",
-      "impact": "Moderate",
-      "direction": "Positive",
-      "why_it_matters": "RBI's approval for Kotak Mahindra Bank to increase stakes in Federal Bank and AU Small Finance Bank signals consolidation and strategic investments within the banking sector.",
-      "sectors_affected": [
-        "Banking",
-        "Financial Services"
-      ],
-      "stocks_affected": [
-        "KOTAKBANK",
-        "FEDERALBNK",
-        "AUBANK"
-      ],
-      "source": "Economic Times Markets",
-      "time_ist": "14:03"
-    },
-    {
-      "headline": "Bajaj Auto Announces Rs 5,633 Crore Share Buyback at 16% Premium",
+      "headline": "Crude oil slides 3.49% to $97.74/bbl; rupee gains 0.99% to 94.24 INR/USD",
       "impact": "High",
       "direction": "Positive",
-      "why_it_matters": "Bajaj Auto's substantial share buyback at a premium indicates strong financial health and commitment to shareholder returns, likely boosting investor confidence in the stock.",
-      "sectors_affected": [
-        "Automobile"
-      ],
-      "stocks_affected": [
-        "BAJAJAUTO"
-      ],
+      "why_it_matters": "Lower oil prices reduce import costs, improve current account deficit outlook, and strengthen rupee. Mechanism: commodity decline alleviates inflation fears, supports RBI's rate-hold stance. Rupee strength benefits exporters but pressures IT services margins.",
+      "sectors_affected": ["Energy", "Financials", "IT", "Automobiles"],
+      "stocks_affected": ["RELIANCE", "ONGC", "INFY", "TCS"],
       "source": "Economic Times Markets",
-      "time_ist": "12:28"
+      "time_ist": "16:10"
     },
     {
-      "headline": "MRF Declares Rs 229/Share Dividend for FY26 After Strong Q4 Results",
+      "headline": "FII net selling continues at -340.89cr; DII support +441.07cr stabilizes market",
       "impact": "Moderate",
-      "direction": "Positive",
-      "why_it_matters": "MRF's strong Q4 earnings and significant dividend declaration reflect robust performance and a positive outlook for the tyre industry, rewarding shareholders.",
-      "sectors_affected": [
-        "Automobile Ancillaries"
-      ],
-      "stocks_affected": [
-        "MRF"
-      ],
-      "source": "Economic Times Markets",
-      "time_ist": "13:44"
-    },
-    {
-      "headline": "Polycab India Shares Jump Over 6% After Strong Q4 Results",
-      "impact": "Moderate",
-      "direction": "Positive",
-      "why_it_matters": "Polycab's impressive Q4 results, with significant revenue growth in wires and cables, indicate strong demand and market share gains, boosting investor sentiment.",
-      "sectors_affected": [
-        "Capital Goods",
-        "Infrastructure"
-      ],
-      "stocks_affected": [
-        "POLYCAB"
-      ],
+      "direction": "Mixed",
+      "why_it_matters": "FII outflows persist despite global optimism, suggesting selective India positioning. DII (primarily LIC, mutual funds) absorbs selling, preventing sharp declines. Mechanism: LIC portfolio rejig (sold SBI, Coal India) reflects defensive stance; midcap/smallcap strength indicates domestic retail/DII rotation away from large-caps.",
+      "sectors_affected": ["Financials", "Energy", "Utilities"],
+      "stocks_affected": ["SBI", "COALINDIA", "ADANIGREEN"],
       "source": "LiveMint Markets",
-      "time_ist": "12:00"
+      "time_ist": "16:07"
     },
     {
-      "headline": "Paytm Shares Jump 6% After Fourth Straight Quarterly Profit",
+      "headline": "BSE Q4 profit surges 61% YoY to Rs 797cr; revenue +85%; Rs 10 dividend announced",
       "impact": "Moderate",
       "direction": "Positive",
-      "why_it_matters": "Paytm's consistent profitability for the fourth consecutive quarter signals improving financial stability and operational efficiency, attracting investor interest.",
-      "sectors_affected": [
-        "Financial Services",
-        "Technology"
-      ],
-      "stocks_affected": [
-        "PAYTM"
-      ],
-      "source": "LiveMint Markets",
-      "time_ist": "09:51"
+      "why_it_matters": "Strong earnings from India's premier exchange reflect robust capital markets activity, higher trading volumes, and listing momentum. Mechanism: dividend yield attractive; signals confidence in market infrastructure. Positive for financial services ecosystem.",
+      "sectors_affected": ["Financials"],
+      "stocks_affected": ["BSE"],
+      "source": "Economic Times Markets, LiveMint Markets",
+      "time_ist": "17:52"
     },
     {
-      "headline": "AI Boom Keeping Markets Elevated Despite Geopolitical Noise",
-      "impact": "High",
+      "headline": "DABUR Q4 profit +16% YoY to Rs 362cr; revenue +7.3%; final dividend Rs 5.50",
+      "impact": "Moderate",
       "direction": "Positive",
-      "why_it_matters": "Global markets are prioritizing AI-driven growth and strong corporate earnings over geopolitical tensions, indicating a strong underlying bullish sentiment, especially in tech.",
-      "sectors_affected": [
-        "Information Technology",
-        "Technology"
-      ],
-      "stocks_affected": [
-        "KPITTECH",
-        "SONATSOFTW"
-      ],
-      "source": "Economic Times Markets",
-      "time_ist": "12:55"
+      "why_it_matters": "Strong domestic FMCG demand, volume expansion, and broad-based category performance. Mechanism: inflation moderating, consumer spending resilient. International revenue +2.5% shows emerging market recovery. Positive for consumer discretionary outlook.",
+      "sectors_affected": ["Consumer Staples", "FMCG"],
+      "stocks_affected": ["DABUR"],
+      "source": "Economic Times Markets, LiveMint Markets",
+      "time_ist": "17:32"
     },
     {
-      "headline": "HFCL Shares Surge 37% in 5 Sessions, Nearly Double in a Month",
+      "headline": "MRF Q4 profit +37% YoY to Rs 680cr; revenue +14%; strong operational leverage",
+      "impact": "Moderate",
+      "direction": "Positive",
+      "why_it_matters": "Tyre sector benefiting from auto recovery and pricing power. Mechanism: volume growth + margin expansion from operational efficiency. Positive for auto ancillaries and consumer discretionary.",
+      "sectors_affected": ["Automobiles", "Consumer Discretionary"],
+      "stocks_affected": ["MRF"],
+      "source": "Economic Times Markets",
+      "time_ist": "12:43"
+    },
+    {
+      "headline": "SEBI discontinues IRRA platform for stock brokers; regulatory tightening continues",
+      "impact": "Moderate",
+      "direction": "Negative",
+      "why_it_matters": "Platform redundancy suggests consolidation in broker risk management infrastructure. Mechanism: may increase compliance costs for smaller brokers; reflects SEBI's focus on cyber resilience and business continuity. Indiabulls settlement (Rs 10.5cr) shows enforcement action.",
+      "sectors_affected": ["Financials"],
+      "stocks_affected": ["INDIABULLS"],
+      "source": "Economic Times Markets",
+      "time_ist": "18:14"
+    },
+    {
+      "headline": "Midcap/smallcap indices hit new highs; Nifty50 stuck in narrow range amid FII caution",
+      "impact": "Moderate",
+      "direction": "Mixed",
+      "why_it_matters": "Divergence indicates domestic retail/DII rotation into value and growth outside large-caps. Mechanism: FII focus on quality large-caps while domestic money chases midcap momentum. Adani Green, Polycab, Nestle India hit 52-week highs (+48% in 1 month).",
+      "sectors_affected": ["Energy", "Consumer Staples", "Industrials"],
+      "stocks_affected": ["ADANIGREEN", "POLYCAB", "NESTLEIND"],
+      "source": "Economic Times Markets",
+      "time_ist": "17:36"
+    },
+    {
+      "headline": "KEI Industries under Income Tax scanner; multibagger stock faces scrutiny",
       "impact": "Low",
-      "direction": "Positive",
-      "why_it_matters": "HFCL's significant rally on strong Q4 earnings and new telecom orders highlights growth opportunities in the telecom infrastructure sector.",
-      "sectors_affected": [
-        "Telecommunication"
-      ],
-      "stocks_affected": [
-        "HFCL"
-      ],
-      "source": "Economic Times Markets",
-      "time_ist": "10:55"
+      "direction": "Negative",
+      "why_it_matters": "IT search at offices; company cooperating. Mechanism: regulatory scrutiny may create near-term uncertainty but unlikely to impact fundamentals if compliance is clean. Stock recently reported strong Q4 results.",
+      "sectors_affected": ["Industrials"],
+      "stocks_affected": ["KEI"],
+      "source": "LiveMint Markets",
+      "time_ist": "17:02"
+    },
+    {
+      "headline": "US Initial Jobless Claims expected 205 (vs 190 prior); productivity data due",
+      "impact": "Moderate",
+      "direction": "Mixed",
+      "why_it_matters": "Higher jobless claims suggest labor market cooling; productivity data critical for Fed rate expectations. Mechanism: if claims rise significantly, supports rate-cut narrative; if productivity weak, inflation concerns persist. US 10Y yield at 4.32% (-0.03%) reflects mixed signals.",
+      "sectors_affected": ["Financials", "IT"],
+      "stocks_affected": ["INFY", "TCS", "HDFC"],
+      "source": "Economic Calendar",
+      "time_ist": "12:30"
     }
   ],
   "global_cues": {
-    "name": "Dow Jones",
-    "value": 49910.59,
-    "change": 612.34,
-    "change_pct": 1.24,
-    "direction": "up"
-  },
-  "sector_impact": [
-    {
-      "sector": "Banking",
-      "impact": "High",
-      "direction": "Positive",
-      "reason": "RBI's approval for Kotak Mahindra Bank to acquire stakes in Federal Bank and AU Small Finance Bank signals strategic growth and consolidation.",
-      "stocks_to_watch": [
-        {
-          "symbol": "KOTAKBANK",
-          "note": "In focus due to stake acquisition approvals."
-        },
-        {
-          "symbol": "FEDERALBNK",
-          "note": "Potential institutional investment from Kotak Mahindra Bank."
-        },
-        {
-          "symbol": "AUBANK",
-          "note": "Kotak Mahindra Bank receives RBI nod for up to 9.99% stake."
-        }
-      ]
-    },
-    {
-      "sector": "Automobile",
-      "impact": "High",
-      "direction": "Positive",
-      "reason": "Bajaj Auto's large share buyback and strong Q4 results, coupled with easing crude oil prices, are positive for the sector.",
-      "stocks_to_watch": [
-        {
-          "symbol": "BAJAJAUTO",
-          "note": "Announced significant share buyback and strong Q4 results."
-        },
-        {
-          "symbol": "HEROMOTOCO",
-          "note": "Shares jump on Jefferies' upgrade after strong Q4 earnings."
-        },
-        {
-          "symbol": "ASHOKLEY",
-          "note": "Recommended as a stock to buy today."
-        }
-      ]
-    },
-    {
-      "sector": "Automobile Ancillaries",
-      "impact": "Moderate",
-      "direction": "Positive",
-      "reason": "MRF's strong Q4 results and dividend declaration indicate robust performance in the tyre segment.",
-      "stocks_to_watch": [
-        {
-          "symbol": "MRF",
-          "note": "Strong Q4 results and high dividend declared."
-        }
-      ]
-    },
-    {
-      "sector": "Capital Goods",
-      "impact": "Moderate",
-      "direction": "Positive",
-      "reason": "Polycab India's strong Q4 results and market share gains highlight growth in the wires and cables industry.",
-      "stocks_to_watch": [
-        {
-          "symbol": "POLYCAB",
-          "note": "Shares jump after strong Q4 results and positive outlook."
-        },
-        {
-          "symbol": "BEML",
-          "note": "Recommended as a stock to buy today."
-        }
-      ]
-    },
-    {
-      "sector": "Information Technology",
-      "impact": "Moderate",
-      "direction": "Mixed",
-      "reason": "Global AI boom is positive, but some companies like KPIT Technologies report profit declines, indicating mixed performance.",
-      "stocks_to_watch": [
-        {
-          "symbol": "KPITTECH",
-          "note": "Shares slide after Q4 profit falls 33% YoY."
-        },
-        {
-          "symbol": "SONATSOFTW",
-          "note": "Declaring Q4 results today."
-        }
-      ]
-    },
-    {
-      "sector": "Financial Services",
-      "impact": "Moderate",
-      "direction": "Positive",
-      "reason": "Paytm's consistent profitability and InCred Holdings' IPO filing show positive momentum in the fintech and NBFC space.",
-      "stocks_to_watch": [
-        {
-          "symbol": "PAYTM",
-          "note": "Fourth consecutive quarterly profit."
-        },
-        {
-          "symbol": "PBFINTECH",
-          "note": "Q4 net profit jumps 54% YoY."
-        }
-      ]
-    },
-    {
-      "sector": "Real Estate",
-      "impact": "Moderate",
-      "direction": "Positive",
-      "reason": "Embassy Developments' shares rallied significantly after a favorable NCLAT ruling, indicating positive sentiment for specific real estate stocks.",
-      "stocks_to_watch": [
-        {
-          "symbol": "GODREJPROP",
-          "note": "Promoter shareholding increased."
-        },
-        {
-          "symbol": "LODHA",
-          "note": "Recommended as a stock to buy today."
-        }
-      ]
-    },
-    {
-      "sector": "Metals",
-      "impact": "Low",
-      "direction": "Positive",
-      "reason": "Gold and silver prices are up due to US-Iran peace deal optimism, potentially benefiting metal stocks.",
-      "stocks_to_watch": [
-        {
-          "symbol": "NALCO",
-          "note": "Last date to buy before ex-record date for dividend."
-        }
-      ]
-    },
-    {
-      "sector": "FMCG",
-      "impact": "Low",
-      "direction": "Negative",
-      "reason": "Godrej Consumer shares tumbled despite Q4 profit, indicating potential input cost pressures and demand risks.",
-      "stocks_to_watch": [
-        {
-          "symbol": "GODREJCP",
-          "note": "Shares tumble despite Q4 show, watch for input costs."
-        },
-        {
-          "symbol": "BRITANNIA",
-          "note": "Declaring Q4 results today."
-        }
-      ]
-    },
-    {
-      "sector": "Pharmaceuticals",
-      "impact": "Low",
-      "direction": "Positive",
-      "reason": "Expert views suggest pharma stocks are attractive due to growth potential and valuations.",
-      "stocks_to_watch": [
-        {
-          "symbol": "LAURUSLABS",
-          "note": "Last date to buy before ex-record date for dividend."
-        },
-        {
-          "symbol": "LUPIN",
-          "note": "Declaring Q4 results today."
-        }
-      ]
-    }
-  ],
-  "levels": {
-    "nifty": {
-      "support": [
-        24300,
-        24250
-      ],
-      "resistance": [
-        24600,
-        24800
-      ]
-    },
-    "sensex": {
-      "support": [
-        77800,
-        77500
-      ],
-      "resistance": [
-        78300,
-        78500
-      ]
-    }
-  },
-  "fii_dii": {
-    "date": "06-May-2026",
-    "fii_buy": 14459.21,
-    "fii_sell": 20294.11,
-    "fii_net": -5834.9,
-    "dii_buy": 22888.16,
-    "dii_sell": 16051.29,
-    "dii_net": 6836.87
-  },
-  "economic_calendar": [
-    {
-      "time_ist": "12:00",
-      "event": "India Services PMI",
-      "country": "IN",
-      "importance": "Moderate",
-      "forecast": null,
-      "previous": null
-    },
-    {
-      "time_ist": "12:30",
-      "event": "Initial Jobless Claims",
-      "country": "US",
-      "importance": "Moderate",
-      "forecast": "205",
-      "previous": "189"
-    },
-    {
-      "time_ist": "12:30",
-      "event": "Nonfarm Productivity QoQ Prel",
-      "country": "US",
-      "importance": "Moderate",
-      "forecast": "1.4",
-      "previous": "1.8"
-    },
-    {
-      "time_ist": "18:05",
-      "event": "Fed Hammack Speech",
-      "country": "US",
-      "importance": "Moderate",
-      "forecast": null,
-      "previous": null
-    },
-    {
-      "time_ist": "19:30",
-      "event": "Fed Williams Speech",
-      "country": "US",
-      "importance": "Moderate",
-      "forecast": null,
-      "previous": null
-    }
-  ],
-  "risk_factors": [
-    "Potential for renewed geopolitical tensions if US-Iran peace talks falter, impacting crude oil prices.",
-    "Global inflation concerns, especially if the US Fed signals further interest rate hikes.",
-    "Volatility in crude oil prices despite current easing, as experts suggest it may take months to return to earlier levels.",
-    "Impact of state election results on fiscal burden due to welfare promises."
-  ],
-  "watchlist": [
-    {
-      "symbol": "BAJAJAUTO",
-      "thesis": "Strong Q4 results and significant share buyback at a premium indicate robust financial health and commitment to shareholder returns.",
-      "trigger": "Confirmation of buyback details and sustained positive market sentiment."
-    },
-    {
-      "symbol": "MRF",
-      "thesis": "Strong Q4 earnings and a high dividend declaration reflect robust performance and positive outlook for the tyre industry.",
-      "trigger": "Continued strong demand and stable raw material costs."
-    },
-    {
-      "symbol": "POLYCAB",
-      "thesis": "Impressive Q4 results with significant revenue growth and market share gains in the wires and cables segment.",
-      "trigger": "Sustained infrastructure spending and housing demand."
-    },
-    {
-      "symbol": "PAYTM",
-      "thesis": "Consistent profitability for the fourth consecutive quarter signals improving financial stability and operational efficiency.",
-      "trigger": "Continued user growth and expansion into new financial services."
-    },
-    {
-      "symbol": "KOTAKBANK",
-      "thesis": "RBI's approval to acquire stakes in Federal Bank and AU Small Finance Bank indicates strategic growth and potential for market share expansion.",
-      "trigger": "Successful integration of acquired stakes and positive synergies."
-    }
-  ],
-  "today_results": [
-    {
-      "symbol": "BHARATFORG",
-      "company": "Bharat Forge Limited",
-      "timing": "During Market",
-      "expected_time_ist": "12:57",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "CARTRADE",
-      "company": "Cartrade Tech Limited",
-      "timing": "During Market",
-      "expected_time_ist": "11:37",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "CEIGALL",
-      "company": "Ceigall India Limited",
-      "timing": "During Market",
-      "expected_time_ist": "14:31",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "COROMANDEL",
-      "company": "Coromandel International Limited",
-      "timing": "During Market",
-      "expected_time_ist": "14:05",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "CRAFTSMAN",
-      "company": "Craftsman Automation Limited",
-      "timing": "During Market",
-      "expected_time_ist": "12:45",
-      "note": "Financial Results/Dividend/Other business matters"
-    },
-    {
-      "symbol": "ESCORTS",
-      "company": "Escorts Kubota Limited",
-      "timing": "During Market",
-      "expected_time_ist": "14:09",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "GATEWAY",
-      "company": "Gateway Distriparks Limited",
-      "timing": "During Market",
-      "expected_time_ist": "14:26",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "HARSHA",
-      "company": "Harsha Engineers International Limited",
-      "timing": "During Market",
-      "expected_time_ist": "13:03",
-      "note": "Financial Results/Dividend/Fund Raising"
-    },
-    {
-      "symbol": "MRF",
-      "company": "MRF Limited",
-      "timing": "During Market",
-      "expected_time_ist": "12:43",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "NILASPACES",
-      "company": "Nila Spaces Limited",
-      "timing": "During Market",
-      "expected_time_ist": "13:38",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "ODIGMA",
-      "company": "Odigma Consultancy Solutions Limited",
-      "timing": "During Market",
-      "expected_time_ist": "13:18",
-      "note": "Financial Results/Other business matters"
-    },
-    {
-      "symbol": "RSSOFTWARE",
-      "company": "R. S. Software (India) Limited",
-      "timing": "During Market",
-      "expected_time_ist": "14:19",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "STYLAMIND",
-      "company": "Stylam Industries Limited",
-      "timing": "During Market",
-      "expected_time_ist": "12:47",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "SURAJLTD",
-      "company": "Suraj Limited",
-      "timing": "During Market",
-      "expected_time_ist": "13:13",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "VTL",
-      "company": "Vardhman Textiles Limited",
-      "timing": "During Market",
-      "expected_time_ist": "12:57",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "WONDERLA",
-      "company": "Wonderla Holidays Limited",
-      "timing": "During Market",
-      "expected_time_ist": "14:21",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "ABLBL",
-      "company": "Aditya Birla Lifestyle Brands Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "ACMESOLAR",
-      "company": "Acme Solar Holdings Limited",
-      "timing": "TBD",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "ALLDIGI",
-      "company": "Alldigi Tech Limited",
-      "timing": "TBD",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "APOLLOPIPE",
-      "company": "Apollo Pipes Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend/Other business matters"
-    },
-    {
-      "symbol": "BAJAJHLDNG",
-      "company": "Bajaj Holdings & Investment Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "BIOCON",
-      "company": "Biocon Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "BRITANNIA",
-      "company": "Britannia Industries Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "BSE",
-      "company": "BSE Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "DABUR",
-      "company": "Dabur India Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "GCSL",
-      "company": "Gretex Corporate Services Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend/Fund Raising"
-    },
-    {
-      "symbol": "GFSTEELS",
-      "company": "Grand Foundry Limited",
-      "timing": "TBD",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "GLOBUSSPR",
-      "company": "Globus Spirits Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "GOACARBON",
-      "company": "Goa Carbon Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "GRAVITA",
-      "company": "Gravita India Limited",
-      "timing": "TBD",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "IGL",
-      "company": "Indraprastha Gas Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "INDOTHAI",
-      "company": "Indo Thai Securities Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend/Other business matters"
-    },
-    {
-      "symbol": "INNOVACAP",
-      "company": "Innova Captab Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Other business matters"
-    },
-    {
-      "symbol": "INVENTURE",
-      "company": "Inventure Growth & Securities Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Other business matters"
-    },
-    {
-      "symbol": "JARO",
-      "company": "Jaro Institute of Technology Management and Research Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "KARURVYSYA",
-      "company": "Karur Vysya Bank Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "KPEL",
-      "company": "K.P. Energy Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend/Other business matters"
-    },
-    {
-      "symbol": "KRYSTAL",
-      "company": "Krystal Integrated Services Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "LUPIN",
-      "company": "Lupin Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend/Other business matters"
-    },
-    {
-      "symbol": "MANAKALUCO",
-      "company": "Manaksia Aluminium Company Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend/Other business matters"
-    },
-    {
-      "symbol": "MARALOVER",
-      "company": "Maral Overseas Limited",
-      "timing": "TBD",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "MGL",
-      "company": "Mahanagar Gas Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "NOCIL",
-      "company": "NOCIL Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "NRBBEARING",
-      "company": "NRB Bearing Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "PARAGMILK",
-      "company": "Parag Milk Foods Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "PIDILITIND",
-      "company": "Pidilite Industries Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "PILITA",
-      "company": "PIL ITALICA LIFESTYLE LIMITED",
-      "timing": "TBD",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "PRUDENT",
-      "company": "Prudent Corporate Advisory Services Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "ROUTE",
-      "company": "ROUTE MOBILE LIMITED",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "RTNPOWER",
-      "company": "RattanIndia Power Limited",
-      "timing": "TBD",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "SANDUMA",
-      "company": "Sandur Manganese & Iron Ores Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend/Other business matters"
-    },
-    {
-      "symbol": "SHAKTIPUMP",
-      "company": "Shakti Pumps (India) Limited",
-      "timing": "TBD",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "SIRCA",
-      "company": "Sirca Paints India Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend/Other business matters"
-    },
-    {
-      "symbol": "SONATSOFTW",
-      "company": "Sonata Software Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    },
-    {
-      "symbol": "SOTL",
-      "company": "Savita Oil Technologies Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend/Other business matters"
-    },
-    {
-      "symbol": "STLNETWORK",
-      "company": "STL Networks Limited",
-      "timing": "TBD",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "SUNDROP",
-      "company": "Sundrop Brands Limited",
-      "timing": "TBD",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "SURYODAY",
-      "company": "Suryoday Small Finance Bank Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend/Fund Raising"
-    },
-    {
-      "symbol": "TARACHAND",
-      "company": "Tara Chand InfraLogistic Solutions Limited",
-      "timing": "TBD",
-      "note": "Financial Results"
-    },
-    {
-      "symbol": "THERMAX",
-      "company": "Thermax Limited",
-      "timing": "TBD",
-      "note": "Financial Results/Dividend"
-    }
-  ],
-  "policy_notes": [
-    {
-      "title": "Reserve Bank of India – Bulletin Weekly Statistical Supplement – Extract",
-      "authority": "RBI",
-      "category": "Bond Market",
-      "fy": "FY 2026-27",
-      "effective_from": "2026-05-01",
-      "source_url": "http://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=62668"
-    },
-    {
-      "title": "Final redemption under Sovereign Gold Bond (SGB) Scheme - Redemption Price for final redemption of SGB 2018-19 Series-I due on May 04, 2026",
-      "authority": "RBI",
-      "category": "Bond Market",
-      "fy": "FY 2026-27",
-      "effective_from": "2026-04-30",
-      "source_url": "http://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=62666"
-    },
-    {
-      "title": "Auction of State Government Securities",
-      "authority": "RBI",
-      "category": "Bond Market",
-      "fy": "FY 2026-27",
-      "effective_from": "2026-04-30",
-      "source_url": "http://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=62664"
-    },
-    {
-      "title": "Lending and Deposit Rates of Scheduled Commercial Banks – April 2026",
-      "authority": "RBI",
-      "category": "Compliance",
-      "fy": "FY 2026-27",
-      "effective_from": "2026-04-30",
-      "source_url": "http://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=62663"
-    },
-    {
-      "title": "Auction of 91-Day, 182-Day and 364-Day Treasury Bills",
-      "authority": "RBI",
-      "category": "Bond Market",
-      "fy": "FY 2026-27",
-      "effective_from": "2026-04-30",
-      "source_url": "http://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=62661"
-    },
-    {
-      "title": "Reserve Bank of India [Conduct of Government Business by Agency Banks (ABs) – Payment of Agency Commission and Oversight of ABs] Directions, 2026",
-      "authority": "RBI",
-      "category": "Taxation",
-      "fy": "FY 2026-27",
-      "effective_from": "2026-04-30",
-      "source_url": "http://www.rbi.org.in/scripts/NotificationUser.aspx?Id=13443&amp;Mode=0"
-    },
-    {
-      "title": "Reserve Bank of India [Disbursement of Government Pension by Agency Banks (ABs)] Directions, 2026",
-      "authority": "RBI",
-      "category": "Taxation",
-      "fy": "FY 2026-27",
-      "effective_from": "2026-04-30",
-      "source_url": "http://www.rbi.org.in/scripts/NotificationUser.aspx?Id=13442&amp;Mode=0"
-    },
-    {
-      "title": "Reserve Bank of India (All India Financial Institutions – Income Recognition, Asset Classification and Provisioning) Amendment Directions, 2026",
-      "authority": "RBI",
-      "category": "Bond Market",
-      "fy": "FY 2026-27",
-      "effective_from": "2026-04-29",
-      "source_url": "http://www.rbi.org.in/scripts/NotificationUser.aspx?Id=13439
+    "Dow Jones": {
+      "value": 49910.59,
+      "change": 612.34,
+      "change_pct": 1.24,
+      "direction": "up"
+    },
+    "Nasdaq": {
+      "value": 25838.94,
+      "change": 512.81,
+      "change_pct": 2.02,
+      "direction": "up"
+    },
+    "Nifty 50": {
+      "value": 24326.65,
+      "change": -4.3,
+      "change_pct": -0.02,
+      "direction": "flat"
+    },
+    "Sensex": {
+      "value": 77844.52,
+      "change": -114,
+      "change_pct": -0.15,
+      "direction": "down"
+    },
+    "Brent $/bbl": {
+      "value": 97.74,
+      "change": -3.53,
+      "change_pct": -3.49,
+      "direction": "down"
+    },
+    "Gold $/oz": {
+      "value": 4745.8,
+      "change": 63.9,
+      "change_pct": 1.36,
+      "direction": "up"
+    },
+    "USD/INR": {
+      "value": 94.24,
+      "change": -0.94,
+      "change_pct": -0.99,
+      "direction": "down"
+    },
+    "US 10Y %": {
+      "value": 4.32,
+      "change":

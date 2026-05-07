@@ -13,7 +13,6 @@ import RiskFactors from '../../components/RiskFactors.astro';
 import AccuracyTracker from '../../components/AccuracyTracker.astro';
 import Watchlist from '../../components/Watchlist.astro';
 import TodayResults from '../../components/TodayResults.astro';
-import RetailPolicyImpact from '../../components/RetailPolicyImpact.astro';
 import { getAllAnalyses } from '../../lib/data';
 import type { DailyAnalysis } from '../../lib/types';
 
@@ -84,7 +83,6 @@ const ogDescription = `${analysis.overall_bias} | ${analysis.confidence}% confid
 
       <Watchlist items={analysis.watchlist} />
       <TodayResults results={analysis.today_results} />
-      <RetailPolicyImpact items={analysis.retail_policy_impact} />
     </div>
   </main>
 </Layout>

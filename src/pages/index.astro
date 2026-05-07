@@ -13,7 +13,6 @@ import RiskFactors from '../components/RiskFactors.astro';
 import AccuracyTracker from '../components/AccuracyTracker.astro';
 import Watchlist from '../components/Watchlist.astro';
 import TodayResults from '../components/TodayResults.astro';
-import RetailPolicyImpact from '../components/RetailPolicyImpact.astro';
 import { getLatestAnalysis } from '../lib/data';
 
 const analysis = await getLatestAnalysis();
@@ -77,9 +76,6 @@ const ogDescription = `${analysis.overall_bias} | ${analysis.confidence}% confid
 
       <!-- Today's results -->
       <TodayResults results={analysis.today_results} />
-
-      <!-- Retail-facing policy impact from official sources -->
-      <RetailPolicyImpact items={analysis.retail_policy_impact} />
 
       <!-- Archive link -->
       <div class="flex justify-center pt-2">

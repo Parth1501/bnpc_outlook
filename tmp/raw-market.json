@@ -16,44 +16,44 @@
     },
     {
       "name": "Nifty 50",
-      "value": 24380.7,
-      "change": 49.75,
-      "change_pct": 0.2,
-      "direction": "up"
+      "value": 24326.65,
+      "change": -4.3,
+      "change_pct": -0.02,
+      "direction": "flat"
     },
     {
       "name": "Sensex",
-      "value": 78036.78,
-      "change": 78.26,
-      "change_pct": 0.1,
-      "direction": "up"
+      "value": 77844.52,
+      "change": -114,
+      "change_pct": -0.15,
+      "direction": "down"
     },
     {
       "name": "Brent $/bbl",
-      "value": 99.64,
-      "change": -1.63,
-      "change_pct": -1.61,
+      "value": 97.74,
+      "change": -3.53,
+      "change_pct": -3.49,
       "direction": "down"
     },
     {
       "name": "Gold $/oz",
-      "value": 4745.7,
-      "change": 63.8,
+      "value": 4745.8,
+      "change": 63.9,
       "change_pct": 1.36,
       "direction": "up"
     },
     {
       "name": "USD/INR",
-      "value": 94.15,
-      "change": -1.03,
-      "change_pct": -1.08,
+      "value": 94.24,
+      "change": -0.94,
+      "change_pct": -0.99,
       "direction": "down"
     },
     {
       "name": "US 10Y %",
-      "value": 4.36,
-      "change": -0.06,
-      "change_pct": -1.36,
+      "value": 4.32,
+      "change": -0.03,
+      "change_pct": -0.78,
       "direction": "down"
     },
     {
@@ -65,19 +65,19 @@
     },
     {
       "name": "Gift Nifty",
-      "value": 24365.7,
-      "change": 44.75,
-      "change_pct": 0.18,
-      "direction": "up"
+      "value": 24311.65,
+      "change": -9.3,
+      "change_pct": -0.04,
+      "direction": "down"
     }
   ],
   "fii_dii": {
-    "date": "06-May-2026",
-    "fii_buy": 14459.21,
-    "fii_sell": 20294.11,
-    "fii_net": -5834.9,
-    "dii_buy": 22888.16,
-    "dii_sell": 16051.29,
-    "dii_net": 6836.87
+    "date": "07-May-2026",
+    "fii_buy": 17997.95,
+    "fii_sell": 18338.84,
+    "fii_net": -340.89,
+    "dii_buy": 17032.05,
+    "dii_sell": 16590.98,
+    "dii_net": 441.07
   }
 }

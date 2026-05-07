@@ -4,8 +4,11 @@ import ImpactBadge from './ImpactBadge.astro';
 import ConfidenceBar from './ConfidenceBar.astro';
 import { fmtDate } from '../lib/format';
 
-interface Props { analysis: DailyAnalysis; }
-const { analysis } = Astro.props;
+interface Props {
+  analysis: DailyAnalysis;
+  lastUpdatedIst?: string;
+}
+const { analysis, lastUpdatedIst = '' } = Astro.props;
 
 const biasColor = {
   Bullish: 'var(--bullish)',
@@ -48,6 +51,11 @@ const confColor = analysis.confidence >= 70
         <span class="label">{fmtDate(analysis.date)}</span>
         <span class="label" style="color: var(--border);">·</span>
         <span class="label">BNPC Morning Outlook</span>
+        <span class="label" style="color: var(--border);">·</span>
+        <span class="label">
+          Updated
+          <span data-role="last-updated" class="ml-1">{lastUpdatedIst || '—'}</span>
+        </span>
       </div>
 
       <!-- Headline call -->
@@ -89,3 +97,21 @@ const confColor = analysis.confidence >= 70
 
   </div>
 </div>
+
+<script>
+  const lastUpdatedEl = document.querySelector('[data-role="last-updated"]');
+  async function loadLastUpdated() {
+    if (!lastUpdatedEl) return;
+    try {
+      const res = await fetch('/last-updated.json', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && typeof data.last_updated_ist === 'string' && data.last_updated_ist.trim()) {
+        lastUpdatedEl.textContent = data.last_updated_ist.trim();
+      }
+    } catch {
+      // keep server-rendered fallback
+    }
+  }
+  loadLastUpdated();
+</script>

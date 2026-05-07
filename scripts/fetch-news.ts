@@ -52,11 +52,13 @@ function loadEnvFromFile(): void {
 }
 
 function toIstCutoffIso(): string {
-  const now = new Date();
-  const d = new Date(now);
-  d.setUTCDate(d.getUTCDate() - 1);
-  d.setUTCHours(10, 0, 0, 0); // Yesterday 15:30 IST
-  return d.toISOString();
+  // Build exact UTC instant for "yesterday 15:30 IST".
+  const istNow = new Date(Date.now() + (5.5 * 60 * 60 * 1000));
+  const y = istNow.getUTCFullYear();
+  const m = istNow.getUTCMonth();
+  const d = istNow.getUTCDate() - 1;
+  const cutoffUtcMs = Date.UTC(y, m, d, 10, 0, 0, 0); // 15:30 IST == 10:00 UTC
+  return new Date(cutoffUtcMs).toISOString();
 }
 
 function toMarketauxDate(valueIso: string): string {

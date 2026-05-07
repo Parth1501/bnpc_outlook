@@ -40,10 +40,7 @@ async function main() {
   // 4. Fetch trusted result schedule
   run('fetch-results.ts');
 
-  // 5. Fetch trusted policy/regulatory notes
-  run('fetch-policy-notes.ts');
-
-  // 6. Run AI analysis
+  // 5. Run AI analysis
   run('analyze.ts');
 
   console.log('\n✅ Pipeline complete. Run `npm run build` to generate the site.');

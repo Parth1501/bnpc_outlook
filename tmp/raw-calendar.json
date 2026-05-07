@@ -13,7 +13,7 @@
     "country": "US",
     "importance": "Moderate",
     "forecast": "205",
-    "previous": "189"
+    "previous": "190"
   },
   {
     "time_ist": "2026-05-07 12:30:00",
@@ -21,7 +21,7 @@
     "country": "US",
     "importance": "Moderate",
     "forecast": "1.4",
-    "previous": "1.8"
+    "previous": "1.6"
   },
   {
     "time_ist": "2026-05-07 18:05:00",
@@ -53,7 +53,15 @@
     "country": "US",
     "importance": "Moderate",
     "forecast": "2.6",
-    "previous": "4.4"
+    "previous": "4.6"
+  },
+  {
+    "time_ist": "2026-05-07 00:00:00",
+    "event": "Local Elections",
+    "country": "GB",
+    "importance": "High",
+    "forecast": null,
+    "previous": null
   },
   {
     "time_ist": "2026-05-07 01:30:00",
@@ -86,13 +94,5 @@
     "importance": "Moderate",
     "forecast": "4",
     "previous": "4"
-  },
-  {
-    "time_ist": "2026-05-07 12:00:00",
-    "event": "Inflation Rate MoM",
-    "country": "MX",
-    "importance": "Moderate",
-    "forecast": "0.25",
-    "previous": "0.86"
   }
 ]
