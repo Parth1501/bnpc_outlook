@@ -1,0 +1,44 @@
+---
+import type { Impact, Direction } from '../lib/types';
+
+interface Props {
+  type: 'impact' | 'direction' | 'bias';
+  value: Impact | Direction | string;
+  size?: 'xs' | 'sm';
+}
+
+const { type, value, size = 'xs' } = Astro.props;
+
+const px = size === 'xs' ? 'px-1.5 py-0.5' : 'px-2 py-1';
+const fs = size === 'xs' ? 'text-[10px]' : 'text-xs';
+
+type ColorKey = 'high' | 'moderate' | 'low' | 'positive' | 'negative' | 'mixed'
+  | 'bullish' | 'bearish' | 'neutral' | 'default';
+
+const colorMap: Record<ColorKey, string> = {
+  high:     'border-[var(--bearish-border)] bg-[var(--bearish-bg)] text-[var(--bearish)]',
+  moderate: 'border-[var(--moderate-border)] bg-[var(--moderate-bg)] text-[var(--moderate)]',
+  low:      'border-[var(--neutral-border)] bg-[var(--neutral-bg)] text-[var(--neutral)]',
+  positive: 'border-[var(--bullish-border)] bg-[var(--bullish-bg)] text-[var(--bullish)]',
+  negative: 'border-[var(--bearish-border)] bg-[var(--bearish-bg)] text-[var(--bearish)]',
+  mixed:    'border-[var(--neutral-border)] bg-[var(--neutral-bg)] text-[var(--neutral)]',
+  bullish:  'border-[var(--bullish-border)] bg-[var(--bullish-bg)] text-[var(--bullish)]',
+  bearish:  'border-[var(--bearish-border)] bg-[var(--bearish-bg)] text-[var(--bearish)]',
+  neutral:  'border-[var(--neutral-border)] bg-[var(--neutral-bg)] text-[var(--neutral)]',
+  default:  'border-[var(--neutral-border)] bg-[var(--neutral-bg)] text-[var(--neutral)]',
+};
+
+const labelMap: Record<string, string> = {
+  High: '● High', Moderate: '● Mod', Low: '○ Low',
+  Positive: '↑ Positive', Negative: '↓ Negative', Mixed: '↔ Mixed',
+  Bullish: '↑ Bullish', Bearish: '↓ Bearish', Neutral: '— Neutral',
+};
+
+const key = value.toLowerCase() as ColorKey;
+const colorClass = colorMap[key] ?? colorMap.default;
+const label = labelMap[value as string] ?? value;
+---
+
+<span class={`inline-flex items-center font-mono font-semibold rounded border tracking-tight ${px} ${fs} ${colorClass}`}>
+  {label}
+</span>

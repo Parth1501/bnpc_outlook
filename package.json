@@ -1,0 +1,31 @@
+{
+  "name": "stock-outlook",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "fetch-news": "tsx scripts/fetch-news.ts",
+    "fetch-market": "tsx scripts/fetch-market-data.ts",
+    "fetch-results": "tsx scripts/fetch-results.ts",
+    "fetch-policy": "tsx scripts/fetch-policy-notes.ts",
+    "analyze": "tsx scripts/analyze.ts",
+    "verify": "tsx scripts/verify-yesterday.ts",
+    "pipeline": "tsx scripts/run-pipeline.ts"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.1.6",
+    "@astrojs/tailwind": "^5.1.0",
+    "astro": "^4.15.0",
+    "tailwindcss": "^3.4.10",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "fast-xml-parser": "^4.4.1",
+    "tsx": "^4.19.1",
+    "typescript": "^5.5.4"
+  }
+}

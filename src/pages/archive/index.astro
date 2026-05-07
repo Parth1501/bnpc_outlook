@@ -1,0 +1,88 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import ImpactBadge from '../../components/ImpactBadge.astro';
+import { getAllAnalyses } from '../../lib/data';
+import { fmtDateShort } from '../../lib/format';
+
+const analyses = (await getAllAnalyses()).slice(0, 90);
+---
+
+<Layout
+  title="Archive — BNPC Market Outlook"
+  description="Last 30 days of BNPC daily Indian stock market morning analyses."
+>
+  <Header currentPath="/archive" />
+
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold mb-1" style="color: var(--text-primary); letter-spacing: -0.02em;">Archive</h1>
+      <p class="text-sm" style="color: var(--text-muted);">Last {analyses.length} daily analyses</p>
+    </div>
+
+    {analyses.length === 0 ? (
+      <div class="card px-6 py-12 text-center">
+        <p style="color: var(--text-muted);">No analyses found yet.</p>
+      </div>
+    ) : (
+      <div class="card overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr style="background: var(--bg-elevated); border-bottom: 1px solid var(--border);">
+              <th class="px-4 py-3 text-left label" style="color: var(--text-muted);">Date</th>
+              <th class="px-4 py-3 text-left label" style="color: var(--text-muted);">Bias</th>
+              <th class="px-4 py-3 text-left label hidden sm:table-cell" style="color: var(--text-muted);">Conf.</th>
+              <th class="px-4 py-3 text-left label" style="color: var(--text-muted);">Headline</th>
+              <th class="px-4 py-3 text-left label hidden md:table-cell" style="color: var(--text-muted);">Accuracy</th>
+            </tr>
+          </thead>
+          <tbody>
+            {analyses.map((a, i) => (
+              <tr
+                class="transition-colors"
+                style={`border-bottom: ${i < analyses.length - 1 ? '1px solid var(--border)' : 'none'};`}
+              >
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <a
+                    href={`/archive/${a.date}`}
+                    class="mono text-xs font-semibold hover:underline"
+                    style="color: var(--accent);"
+                  >
+                    {fmtDateShort(a.date)}
+                  </a>
+                </td>
+                <td class="px-4 py-3">
+                  <ImpactBadge type="bias" value={a.overall_bias} />
+                </td>
+                <td class="px-4 py-3 mono text-xs hidden sm:table-cell" style="color: var(--text-muted);">
+                  {a.confidence}%
+                </td>
+                <td class="px-4 py-3 max-w-xs">
+                  <a
+                    href={`/archive/${a.date}`}
+                    class="text-xs leading-snug hover:underline block"
+                    style="color: var(--text-secondary);"
+                  >
+                    {a.headline_call}
+                  </a>
+                </td>
+                <td class="px-4 py-3 hidden md:table-cell">
+                  {a.accuracy_review ? (
+                    <span
+                      class="mono text-xs font-bold"
+                      style={a.accuracy_review.correct ? 'color: var(--bullish);' : 'color: var(--bearish);'}
+                    >
+                      {a.accuracy_review.correct ? '✓ Hit' : '✗ Miss'}
+                    </span>
+                  ) : (
+                    <span class="mono text-xs" style="color: var(--text-muted);">Pending</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </main>
+</Layout>

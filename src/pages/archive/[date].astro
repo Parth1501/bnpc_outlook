@@ -1,0 +1,90 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import TickerBar from '../../components/TickerBar.astro';
+import HeroOutlook from '../../components/HeroOutlook.astro';
+import GlobalCues from '../../components/GlobalCues.astro';
+import NewsImpactList from '../../components/NewsImpactList.astro';
+import SectorGrid from '../../components/SectorGrid.astro';
+import LevelsToWatch from '../../components/LevelsToWatch.astro';
+import FIIDIIBlock from '../../components/FIIDIIBlock.astro';
+import EconCalendar from '../../components/EconCalendar.astro';
+import RiskFactors from '../../components/RiskFactors.astro';
+import AccuracyTracker from '../../components/AccuracyTracker.astro';
+import Watchlist from '../../components/Watchlist.astro';
+import TodayResults from '../../components/TodayResults.astro';
+import RetailPolicyImpact from '../../components/RetailPolicyImpact.astro';
+import { getAllAnalyses } from '../../lib/data';
+import type { DailyAnalysis } from '../../lib/types';
+
+export async function getStaticPaths() {
+  const analyses = await getAllAnalyses();
+  return analyses.map((a) => ({
+    params: { date: a.date },
+    props: { analysis: a },
+  }));
+}
+
+interface Props { analysis: DailyAnalysis; }
+const { analysis } = Astro.props;
+const ogDescription = `${analysis.overall_bias} | ${analysis.confidence}% confidence | ${analysis.headline_call}`;
+---
+
+<Layout
+  title={`BNPC Market Outlook — ${analysis.date}`}
+  description={ogDescription}
+  ogTitle={`India Market Outlook ${analysis.date}: ${analysis.overall_bias}`}
+  analysis={analysis}
+>
+  <Header currentPath="/archive" />
+  <TickerBar cues={analysis.global_cues} />
+
+  <!-- Archive banner -->
+  <div class="border-b" style="background: var(--moderate-bg); border-color: var(--moderate-border);">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4">
+      <span class="text-xs" style="color: var(--moderate);">
+        📂 Archived analysis — {analysis.date}
+      </span>
+      <a href="/archive" class="text-xs font-medium hover:underline" style="color: var(--moderate);">
+        ← Back to archive
+      </a>
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex flex-col gap-6">
+      <HeroOutlook analysis={analysis} />
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
+          <GlobalCues cues={analysis.global_cues} />
+        </div>
+        <div>
+          <FIIDIIBlock data={analysis.fii_dii} />
+        </div>
+      </div>
+
+      <div class="card p-6">
+        <NewsImpactList drivers={analysis.key_drivers} />
+      </div>
+
+      <div class="card p-6">
+        <SectorGrid sectors={analysis.sector_impact} />
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <LevelsToWatch analysis={analysis} />
+        <EconCalendar events={analysis.economic_calendar} />
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RiskFactors risks={analysis.risk_factors} />
+        <AccuracyTracker review={analysis.accuracy_review} />
+      </div>
+
+      <Watchlist items={analysis.watchlist} />
+      <TodayResults results={analysis.today_results} />
+      <RetailPolicyImpact items={analysis.retail_policy_impact} />
+    </div>
+  </main>
+</Layout>

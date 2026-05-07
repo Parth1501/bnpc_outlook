@@ -1,0 +1,65 @@
+---
+import type { CalendarEvent } from '../lib/types';
+import ImpactBadge from './ImpactBadge.astro';
+
+interface Props { events: CalendarEvent[]; }
+const { events } = Astro.props;
+const highImpactEvents = events.filter((e) => e.importance === 'High' || e.importance === 'Moderate');
+---
+
+<div>
+  <div class="label mb-3">Economic Calendar — Today</div>
+
+  {highImpactEvents.length === 0 ? (
+    <div class="card px-4 py-6 text-center">
+      <p class="text-xs" style="color: var(--text-muted);">No high or moderate-impact scheduled events today.</p>
+    </div>
+  ) : (
+    <div class="card overflow-hidden">
+      <table class="w-full text-xs">
+        <thead>
+          <tr style="background: var(--bg-elevated); border-bottom: 1px solid var(--border);">
+            <th class="px-4 py-2.5 text-left label" style="color: var(--text-muted);">Time IST</th>
+            <th class="px-4 py-2.5 text-left label" style="color: var(--text-muted);">Event</th>
+            <th class="px-4 py-2.5 text-left label hidden sm:table-cell" style="color: var(--text-muted);">Country</th>
+            <th class="px-4 py-2.5 text-left label hidden sm:table-cell" style="color: var(--text-muted);">Impact</th>
+            <th class="px-4 py-2.5 text-right label hidden md:table-cell" style="color: var(--text-muted);">Forecast</th>
+            <th class="px-4 py-2.5 text-right label hidden md:table-cell" style="color: var(--text-muted);">Previous</th>
+          </tr>
+        </thead>
+        <tbody>
+          {highImpactEvents.map((e, i) => (
+            <tr style={`border-bottom: ${i < highImpactEvents.length - 1 ? '1px solid var(--border)' : 'none'};`}>
+              <td class="px-4 py-2.5 mono font-medium whitespace-nowrap" style="color: var(--text-secondary);">
+                {e.time_ist}
+              </td>
+              <td class="px-4 py-2.5" style="color: var(--text-primary);">
+                <div class="font-medium">{e.event}</div>
+                <div class="sm:hidden mt-0.5 flex items-center gap-2">
+                  <span class="mono text-[10px] px-1.5 py-0.5 rounded border" style="border-color: var(--border); color: var(--text-muted); background: var(--bg-elevated);">
+                    {(e.country ?? 'GLOBAL').toUpperCase()}
+                  </span>
+                  <ImpactBadge type="impact" value={e.importance} />
+                </div>
+              </td>
+              <td class="px-4 py-2.5 hidden sm:table-cell">
+                <span class="mono text-[11px] px-2 py-1 rounded border" style="border-color: var(--border); color: var(--text-secondary); background: var(--bg-elevated);">
+                  {(e.country ?? 'GLOBAL').toUpperCase()}
+                </span>
+              </td>
+              <td class="px-4 py-2.5 hidden sm:table-cell">
+                <ImpactBadge type="impact" value={e.importance} />
+              </td>
+              <td class="px-4 py-2.5 text-right mono hidden md:table-cell" style="color: var(--text-secondary);">
+                {e.forecast ?? '—'}
+              </td>
+              <td class="px-4 py-2.5 text-right mono hidden md:table-cell" style="color: var(--text-muted);">
+                {e.previous ?? '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>

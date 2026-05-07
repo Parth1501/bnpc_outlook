@@ -1,0 +1,63 @@
+---
+import type { AccuracyReview } from '../lib/types';
+import ImpactBadge from './ImpactBadge.astro';
+
+interface Props { review?: AccuracyReview; }
+const { review } = Astro.props;
+---
+
+<div>
+  <div class="label mb-3">Yesterday's Call vs Actual</div>
+
+  {!review ? (
+    <div class="card px-4 py-6 text-center">
+      <p class="text-xs" style="color: var(--text-muted);">No prior day data available yet.</p>
+    </div>
+  ) : (
+    <div class="card p-4 flex flex-col sm:flex-row gap-4 items-start">
+
+      <!-- Result badge -->
+      <div class="flex-shrink-0 flex flex-col items-center justify-center rounded-xl px-6 py-5 border"
+        style={review.correct
+          ? 'border-color: var(--bullish-border); background: var(--bullish-bg);'
+          : 'border-color: var(--bearish-border); background: var(--bearish-bg);'}
+      >
+        <div class="text-3xl font-black mono" style={review.correct ? 'color: var(--bullish);' : 'color: var(--bearish);'}>
+          {review.correct ? '✓' : '✗'}
+        </div>
+        <div class="text-[10px] font-bold tracking-wider uppercase mt-1"
+          style={review.correct ? 'color: var(--bullish);' : 'color: var(--bearish);'}>
+          {review.correct ? 'Correct' : 'Missed'}
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div class="flex-1 min-w-0">
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <div class="label mb-1">Our Call</div>
+            <ImpactBadge type="bias" value={review.yesterday_prediction} size="sm" />
+          </div>
+          <div>
+            <div class="label mb-1">Actual Move</div>
+            <span class="mono text-sm font-bold"
+              style={review.actual_direction === 'up' ? 'color: var(--bullish);' : review.actual_direction === 'down' ? 'color: var(--bearish);' : 'color: var(--neutral);'}>
+              {review.actual_direction === 'up' ? '↑' : review.actual_direction === 'down' ? '↓' : '—'}
+              {Math.abs(review.actual_move).toFixed(2)}%
+            </span>
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <div class="label mb-1">What we said</div>
+          <p class="text-xs italic" style="color: var(--text-secondary);">"{review.yesterday_headline}"</p>
+        </div>
+
+        <div class="mono text-xs" style="color: var(--text-muted);">
+          Nifty closed at {review.nifty_close.toLocaleString('en-IN')}
+        </div>
+      </div>
+
+    </div>
+  )}
+</div>

@@ -1,0 +1,62 @@
+---
+import type { StockResult } from '../lib/types';
+
+interface Props {
+  results: StockResult[];
+}
+
+const { results = [] } = Astro.props;
+
+const timingRank: Record<string, number> = {
+  'During Market': 0,
+  'Post Market': 1,
+  'Pre Market': 2,
+  'TBD': 3,
+};
+
+const sortedResults = [...results].sort((a, b) => {
+  const rankA = timingRank[a.timing] ?? 99;
+  const rankB = timingRank[b.timing] ?? 99;
+  if (rankA !== rankB) return rankA - rankB;
+  return a.symbol.localeCompare(b.symbol);
+});
+---
+
+<div class="card p-6">
+  <div class="label mb-3">Today's Stock Results</div>
+  {sortedResults.length === 0 ? (
+    <p class="text-xs" style="color: var(--text-muted);">No confirmed result declarations for today yet.</p>
+  ) : (
+    <div class="overflow-hidden rounded-lg border" style="border-color: var(--border);">
+      <table class="w-full text-xs">
+        <thead>
+          <tr style="background: var(--bg-elevated); border-bottom: 1px solid var(--border);">
+            <th class="px-4 py-2.5 text-left label" style="color: var(--text-muted);">Stock</th>
+            <th class="px-4 py-2.5 text-left label" style="color: var(--text-muted);">Company</th>
+            <th class="px-4 py-2.5 text-left label" style="color: var(--text-muted);">Declaration</th>
+            <th class="px-4 py-2.5 text-left label hidden md:table-cell" style="color: var(--text-muted);">Expected Time (IST)</th>
+            <th class="px-4 py-2.5 text-left label hidden lg:table-cell" style="color: var(--text-muted);">Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedResults.map((r, i) => (
+            <tr style={`border-bottom: ${i < sortedResults.length - 1 ? '1px solid var(--border)' : 'none'};`}>
+              <td class="px-4 py-2.5 mono font-semibold" style="color: var(--text-primary);">{r.symbol}</td>
+              <td class="px-4 py-2.5" style="color: var(--text-secondary);">{r.company}</td>
+              <td class="px-4 py-2.5">
+                <span
+                  class="inline-flex items-center px-2 py-1 rounded-full border text-[10px] font-semibold tracking-wide uppercase"
+                  style={`border-color: ${r.timing === 'During Market' ? 'var(--down-border)' : 'var(--neutral-border)'}; background: ${r.timing === 'During Market' ? 'var(--down-bg)' : 'var(--neutral-bg)'}; color: ${r.timing === 'During Market' ? 'var(--down)' : 'var(--text-secondary)'};`}
+                >
+                  {r.timing}
+                </span>
+              </td>
+              <td class="px-4 py-2.5 mono hidden md:table-cell" style="color: var(--text-secondary);">{r.expected_time_ist ?? '—'}</td>
+              <td class="px-4 py-2.5 hidden lg:table-cell" style="color: var(--text-muted);">{r.note ?? '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>

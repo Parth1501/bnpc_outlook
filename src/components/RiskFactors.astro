@@ -1,0 +1,23 @@
+---
+interface Props { risks: string[]; }
+const { risks } = Astro.props;
+---
+
+<div>
+  <div class="label mb-3">Risk Factors</div>
+  <div class="card border-l-2 overflow-hidden" style="border-left-color: var(--bearish);">
+    <ul class="divide-y" style="--tw-divide-opacity: 1; border-color: var(--border);">
+      {risks.map((risk, i) => (
+        <li class="flex items-start gap-3 px-4 py-3">
+          <span
+            class="mono text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5"
+            style="background: var(--bearish-bg); color: var(--bearish); border: 1px solid var(--bearish-border);"
+          >
+            R{i + 1}
+          </span>
+          <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">{risk}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</div>

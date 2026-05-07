@@ -1,0 +1,57 @@
+---
+import type { DailyAnalysis } from '../lib/types';
+
+interface Props { analysis: DailyAnalysis; }
+const { analysis } = Astro.props;
+
+const { nifty, sensex } = analysis.levels;
+---
+
+<div>
+  <div class="label mb-3">Levels to Watch — Today's Session</div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {[
+      { name: 'Nifty 50', levels: nifty },
+      { name: 'Sensex',   levels: sensex },
+    ].map(({ name, levels }) => (
+      <div class="card p-4">
+        <div class="text-sm font-bold mb-3" style="color: var(--text-primary);">{name}</div>
+
+        <!-- Resistance -->
+        <div class="mb-3">
+          <div class="label mb-1.5" style="color: var(--bearish);">Resistance</div>
+          <div class="flex gap-2 flex-wrap">
+            {levels.resistance.map((r, i) => (
+              <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded border"
+                style="border-color: var(--bearish-border); background: var(--bearish-bg);">
+                <span class="mono text-[10px] font-semibold" style="color: var(--text-muted);">R{i + 1}</span>
+                <span class="mono text-sm font-bold" style="color: var(--bearish);">
+                  {r.toLocaleString('en-IN')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <!-- Visual range bar -->
+        <div class="h-1.5 rounded-full mb-3" style="background: linear-gradient(to right, var(--bullish-border), var(--border) 50%, var(--bearish-border));"></div>
+
+        <!-- Support -->
+        <div>
+          <div class="label mb-1.5" style="color: var(--bullish);">Support</div>
+          <div class="flex gap-2 flex-wrap">
+            {levels.support.map((s, i) => (
+              <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded border"
+                style="border-color: var(--bullish-border); background: var(--bullish-bg);">
+                <span class="mono text-[10px] font-semibold" style="color: var(--text-muted);">S{i + 1}</span>
+                <span class="mono text-sm font-bold" style="color: var(--bullish);">
+                  {s.toLocaleString('en-IN')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>

@@ -1,0 +1,32 @@
+---
+import type { RetailPolicyImpact } from '../lib/types';
+
+interface Props {
+  items: RetailPolicyImpact[];
+}
+
+const { items = [] } = Astro.props;
+---
+
+<div class="card p-6">
+  <div class="label mb-3">Retail Impact Notes (Official Updates)</div>
+  {items.length === 0 ? (
+    <p class="text-xs" style="color: var(--text-muted);">No major retail-impacting official policy updates in current feed.</p>
+  ) : (
+    <div class="flex flex-col gap-2.5">
+      {items.map((n) => (
+        <div class="card px-4 py-3">
+          <div class="flex flex-wrap items-center gap-2 mb-1.5">
+            <span class="text-[10px] px-1.5 py-0.5 rounded border mono" style="border-color: var(--border); color: var(--text-secondary); background: var(--bg-elevated);">{n.fy}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded border mono" style="border-color: var(--neutral-border); color: var(--text-muted); background: var(--neutral-bg);">{n.category}</span>
+          </div>
+          <div class="text-xs font-semibold mb-1" style="color: var(--text-primary);">{n.title}</div>
+          <div class="text-[11px] mb-1" style="color: var(--text-secondary);"><span class="font-semibold">Impact:</span> {n.impact_on_retail}</div>
+          <div class="text-[11px] mb-1.5" style="color: var(--text-muted);"><span class="font-semibold">Watch:</span> {n.what_to_watch}</div>
+          <a href={n.source_url} target="_blank" rel="noopener noreferrer" class="text-[11px] underline" style="color: var(--accent);">Official source</a>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+

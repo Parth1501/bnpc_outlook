@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Additional resets applied after Tailwind base */
+@layer base {
+  a { text-decoration: none; }
+  table { border-collapse: collapse; }
+}

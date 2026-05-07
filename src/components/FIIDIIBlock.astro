@@ -1,0 +1,71 @@
+---
+import type { FiiDii } from '../lib/types';
+import { fmtCrore, fmtDateShort } from '../lib/format';
+
+interface Props { data: FiiDii; }
+const { data } = Astro.props;
+
+const rows = [
+  { label: 'Buy',     fii: data.fii_buy,  dii: data.dii_buy  },
+  { label: 'Sell',    fii: data.fii_sell, dii: data.dii_sell },
+  { label: 'Net',     fii: data.fii_net,  dii: data.dii_net  },
+];
+---
+
+<div>
+  <div class="label mb-3">FII / DII Flows — {fmtDateShort(data.date)}</div>
+  <div class="card overflow-hidden">
+    <table class="w-full text-xs">
+      <thead>
+        <tr style="background: var(--bg-elevated); border-bottom: 1px solid var(--border);">
+          <th class="px-4 py-2.5 text-left label" style="color: var(--text-muted);">Category</th>
+          <th class="px-4 py-2.5 text-right label" style="color: var(--text-muted);">FII (₹ Cr)</th>
+          <th class="px-4 py-2.5 text-right label" style="color: var(--text-muted);">DII (₹ Cr)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(({ label, fii, dii }, i) => {
+          const isNet = label === 'Net';
+          const fiiBold = isNet ? 'font-bold' : 'font-medium';
+          const diiBold = isNet ? 'font-bold' : 'font-medium';
+          const fiiColor = isNet
+            ? (fii >= 0 ? 'var(--bullish)' : 'var(--bearish)')
+            : 'var(--text-secondary)';
+          const diiColor = isNet
+            ? (dii >= 0 ? 'var(--bullish)' : 'var(--bearish)')
+            : 'var(--text-secondary)';
+          return (
+            <tr style={`border-bottom: ${i < rows.length - 1 ? '1px solid var(--border)' : 'none'}; background: ${isNet ? 'var(--bg-elevated)' : 'transparent'};`}>
+              <td class={`px-4 py-2.5 ${isNet ? 'font-bold' : 'font-medium'}`} style="color: var(--text-primary);">
+                {label}
+              </td>
+              <td class={`px-4 py-2.5 text-right mono ${fiiBold}`} style={`color: ${fiiColor};`}>
+                {isNet ? (fii >= 0 ? '+' : '') : ''}{fii.toLocaleString('en-IN')}
+              </td>
+              <td class={`px-4 py-2.5 text-right mono ${diiBold}`} style={`color: ${diiColor};`}>
+                {isNet ? (dii >= 0 ? '+' : '') : ''}{dii.toLocaleString('en-IN')}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+
+    <!-- Flow summary pill -->
+    <div class="px-4 py-2.5 border-t flex items-center gap-3 flex-wrap"
+      style="border-color: var(--border); background: var(--bg);">
+      <div class="flex items-center gap-1.5">
+        <div class="w-2 h-2 rounded-sm" style={`background: ${data.fii_net >= 0 ? 'var(--bullish)' : 'var(--bearish)'};`}></div>
+        <span class="text-[11px]" style="color: var(--text-muted);">
+          FII {data.fii_net >= 0 ? 'Net Buyers' : 'Net Sellers'} ₹{Math.abs(data.fii_net).toLocaleString('en-IN')} Cr
+        </span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <div class="w-2 h-2 rounded-sm" style={`background: ${data.dii_net >= 0 ? 'var(--bullish)' : 'var(--bearish)'};`}></div>
+        <span class="text-[11px]" style="color: var(--text-muted);">
+          DII {data.dii_net >= 0 ? 'Net Buyers' : 'Net Sellers'} ₹{Math.abs(data.dii_net).toLocaleString('en-IN')} Cr
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

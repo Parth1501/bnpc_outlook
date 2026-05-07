@@ -1,0 +1,69 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+
+interface Props {
+  currentPath?: string;
+}
+const { currentPath = '/' } = Astro.props;
+const isArchive = currentPath.startsWith('/archive');
+---
+
+<header
+  class="no-print sticky top-0 z-50 border-b"
+  style="background: color-mix(in srgb, var(--bg-surface) 92%, transparent); border-color: var(--border); backdrop-filter: blur(10px);"
+>
+  <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+    <!-- Brand -->
+    <a href="/" class="flex items-center gap-2.5 flex-shrink-0 no-underline">
+      <img
+        src="/bnpc-logo.jpg"
+        alt="BNPC Private Limited"
+        class="w-[88px] h-[34px] object-cover rounded-md border"
+        style="border-color: var(--border);"
+        loading="eager"
+      />
+      <div class="hidden sm:block">
+        <div class="text-xs font-bold tracking-wide" style="color: #d9b252;">Market Outlook</div>
+        <div class="text-[10px] tracking-widest uppercase" style="color: var(--text-secondary);">Daily Analysis</div>
+      </div>
+    </a>
+
+    <!-- Nav + Controls -->
+    <div class="flex items-center gap-3">
+      <nav class="flex items-center gap-1 rounded-full p-1" style="background: var(--bg-elevated); border: 1px solid var(--border);">
+        <a
+          href="/"
+          class={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${!isArchive ? 'font-semibold' : ''}`}
+          style={!isArchive
+            ? 'background: var(--accent-bg); color: var(--accent);'
+            : 'color: var(--text-muted);'}
+        >
+          Today
+        </a>
+        <a
+          href="/archive"
+          class={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${isArchive ? 'font-semibold' : ''}`}
+          style={isArchive
+            ? 'background: var(--accent-bg); color: var(--accent);'
+            : 'color: var(--text-muted);'}
+        >
+          Archive
+        </a>
+        <a
+          href="/rss.xml"
+          class="text-xs font-medium px-2 py-1.5 rounded-full transition-colors"
+          style="color: var(--text-muted);"
+          title="RSS Feed"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 11a9 9 0 0 1 9 9"/>
+            <path d="M4 4a16 16 0 0 1 16 16"/>
+            <circle cx="5" cy="19" r="1"/>
+          </svg>
+        </a>
+      </nav>
+      <ThemeToggle />
+    </div>
+  </div>
+</header>

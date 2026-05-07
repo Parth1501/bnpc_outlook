@@ -1,0 +1,90 @@
+name: Daily Market Analysis & Deploy
+
+on:
+  schedule:
+    # 02:30 UTC = 08:00 IST, Monday–Friday
+    - cron: '30 2 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      skip_deploy:
+        description: 'Skip rsync deploy (build only)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  analyze-and-build:
+    name: Analyze → Build → Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 2. Node.js setup ─────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 3. Data pipeline ─────────────────────────────────────────────────────
+      - name: Verify yesterday's call
+        run: npm run verify
+        continue-on-error: true  # Non-fatal if market data unavailable
+
+      - name: Fetch news
+        run: npm run fetch-news
+
+      - name: Fetch market data
+        run: npm run fetch-market
+
+      - name: Generate AI analysis
+        run: npm run analyze
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      # ── 4. Commit new analysis JSON ──────────────────────────────────────────
+      - name: Commit analysis
+        run: |
+          git config user.name  "BNPC Bot"
+          git config user.email "bot@bnpc.in"
+          DATE=$(TZ='Asia/Kolkata' date +%Y-%m-%d)
+          git add "src/data/analyses/${DATE}.json"
+          # Also commit accuracy_review updates to yesterday's file
+          git add src/data/analyses/ || true
+          git diff --staged --quiet || git commit -m "analysis: ${DATE}"
+
+      # ── 5. Astro static build ────────────────────────────────────────────────
+      - name: Build static site
+        run: npm run build
+
+      # ── 6. Deploy via rsync to OCI ───────────────────────────────────────────
+      - name: Setup SSH key
+        if: ${{ github.event.inputs.skip_deploy != 'true' }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.OCI_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.OCI_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy to OCI via rsync
+        if: ${{ github.event.inputs.skip_deploy != 'true' }}
+        run: |
+          rsync -avz --delete \
+            --exclude='.git' \
+            dist/ \
+            "${{ secrets.OCI_USER }}@${{ secrets.OCI_HOST }}:/var/www/stock-outlook/"
+
+      # ── 7. Push analysis commit to repo ─────────────────────────────────────
+      - name: Push analysis commit
+        run: git push

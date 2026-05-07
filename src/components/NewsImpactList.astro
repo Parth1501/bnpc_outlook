@@ -1,0 +1,101 @@
+---
+import type { KeyDriver, Impact } from '../lib/types';
+import ImpactBadge from './ImpactBadge.astro';
+
+interface Props { drivers: KeyDriver[]; }
+const { drivers } = Astro.props;
+
+const groups: Record<Impact, KeyDriver[]> = { High: [], Moderate: [], Low: [] };
+for (const d of drivers) groups[d.impact].push(d);
+
+const groupMeta: Record<Impact, { label: string; color: string; border: string; bg: string }> = {
+  High:     { label: 'High Impact',     color: 'var(--bearish)',  border: 'var(--bearish-border)',  bg: 'var(--bearish-bg)' },
+  Moderate: { label: 'Moderate Impact', color: 'var(--moderate)', border: 'var(--moderate-border)', bg: 'var(--moderate-bg)' },
+  Low:      { label: 'Low Impact',      color: 'var(--neutral)',  border: 'var(--neutral-border)',  bg: 'var(--neutral-bg)' },
+};
+---
+
+<div>
+  <div class="label mb-3">Key Drivers — Yesterday Post-close &amp; Overnight</div>
+
+  {(['High', 'Moderate', 'Low'] as Impact[]).map((level) => {
+    const items = groups[level];
+    if (items.length === 0) return null;
+    const meta = groupMeta[level];
+    return (
+      <div class="mb-5">
+        <!-- Group header -->
+        <div class="flex items-center gap-2 mb-2 pb-2 border-b" style="border-color: var(--border);">
+          <div
+            class="w-1 h-4 rounded-sm flex-shrink-0"
+            style={`background: ${meta.color};`}
+          ></div>
+          <span class="text-xs font-bold tracking-wide" style={`color: ${meta.color};`}>
+            {meta.label}
+          </span>
+          <span class="mono text-[10px]" style="color: var(--text-muted);">
+            ({items.length})
+          </span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          {items.map((d) => (
+            <div
+              class="card px-4 py-3 border-l-2"
+              style={`border-left-color: ${meta.color};`}
+            >
+              <!-- Headline row -->
+              <div class="flex flex-wrap items-start gap-2 mb-2">
+                <ImpactBadge type="direction" value={d.direction} />
+                <p class="flex-1 min-w-0 text-sm font-semibold leading-snug" style="color: var(--text-primary);">
+                  {d.headline}
+                </p>
+              </div>
+
+              <!-- Why it matters -->
+              <p class="text-xs leading-relaxed mb-2" style="color: var(--text-secondary);">
+                {d.why_it_matters}
+              </p>
+
+              <!-- Meta row: source, time, sectors, stocks -->
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <!-- Source + time -->
+                <span class="mono text-[10px]" style="color: var(--text-muted);">
+                  {d.source} · {d.time_ist} IST
+                </span>
+
+                <!-- Sectors -->
+                {d.sectors_affected.length > 0 && (
+                  <div class="flex flex-wrap gap-1">
+                    {d.sectors_affected.map((s) => (
+                      <span
+                        class="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                        style="background: var(--accent-bg); color: var(--accent);"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <!-- Stocks -->
+                {d.stocks_affected.length > 0 && (
+                  <div class="flex flex-wrap gap-1">
+                    {d.stocks_affected.map((s) => (
+                      <span
+                        class="mono text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                        style="background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border);"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  })}
+</div>

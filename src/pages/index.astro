@@ -1,0 +1,101 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import TickerBar from '../components/TickerBar.astro';
+import HeroOutlook from '../components/HeroOutlook.astro';
+import GlobalCues from '../components/GlobalCues.astro';
+import NewsImpactList from '../components/NewsImpactList.astro';
+import SectorGrid from '../components/SectorGrid.astro';
+import LevelsToWatch from '../components/LevelsToWatch.astro';
+import FIIDIIBlock from '../components/FIIDIIBlock.astro';
+import EconCalendar from '../components/EconCalendar.astro';
+import RiskFactors from '../components/RiskFactors.astro';
+import AccuracyTracker from '../components/AccuracyTracker.astro';
+import Watchlist from '../components/Watchlist.astro';
+import TodayResults from '../components/TodayResults.astro';
+import RetailPolicyImpact from '../components/RetailPolicyImpact.astro';
+import { getLatestAnalysis } from '../lib/data';
+
+const analysis = await getLatestAnalysis();
+
+if (!analysis) {
+  return new Response('No analysis data found.', { status: 503 });
+}
+
+const ogDescription = `${analysis.overall_bias} | ${analysis.confidence}% confidence | ${analysis.headline_call}`;
+---
+
+<Layout
+  title={`BNPC Market Outlook — ${analysis.date}`}
+  description={ogDescription}
+  ogTitle={`India Market Outlook ${analysis.date}: ${analysis.overall_bias}`}
+  analysis={analysis}
+>
+  <Header currentPath="/" />
+  <TickerBar cues={analysis.global_cues} />
+
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex flex-col gap-6">
+
+      <!-- Hero -->
+      <HeroOutlook analysis={analysis} />
+
+      <!-- 2-col grid: GlobalCues + FII/DII -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
+          <GlobalCues cues={analysis.global_cues} />
+        </div>
+        <div>
+          <FIIDIIBlock data={analysis.fii_dii} />
+        </div>
+      </div>
+
+      <!-- News -->
+      <div class="card p-6">
+        <NewsImpactList drivers={analysis.key_drivers} />
+      </div>
+
+      <!-- Sectors -->
+      <div class="card p-6">
+        <SectorGrid sectors={analysis.sector_impact} />
+      </div>
+
+      <!-- Levels + Calendar -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <LevelsToWatch analysis={analysis} />
+        <EconCalendar events={analysis.economic_calendar} />
+      </div>
+
+      <!-- Risk + Accuracy -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RiskFactors risks={analysis.risk_factors} />
+        <AccuracyTracker review={analysis.accuracy_review} />
+      </div>
+
+      <!-- Watchlist -->
+      <Watchlist items={analysis.watchlist} />
+
+      <!-- Today's results -->
+      <TodayResults results={analysis.today_results} />
+
+      <!-- Retail-facing policy impact from official sources -->
+      <RetailPolicyImpact items={analysis.retail_policy_impact} />
+
+      <!-- Archive link -->
+      <div class="flex justify-center pt-2">
+        <a
+          href="/archive"
+          class="inline-flex items-center gap-2 text-xs font-medium px-4 py-2.5 rounded-full border transition-colors"
+          style="border-color: var(--border); color: var(--text-muted);"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/>
+          </svg>
+          View 30-day archive
+        </a>
+      </div>
+
+    </div>
+  </main>
+</Layout>

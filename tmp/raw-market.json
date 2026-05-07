@@ -1,0 +1,83 @@
+{
+  "global_cues": [
+    {
+      "name": "Dow Jones",
+      "value": 49910.59,
+      "change": 612.34,
+      "change_pct": 1.24,
+      "direction": "up"
+    },
+    {
+      "name": "Nasdaq",
+      "value": 25838.94,
+      "change": 512.81,
+      "change_pct": 2.02,
+      "direction": "up"
+    },
+    {
+      "name": "Nifty 50",
+      "value": 24380.7,
+      "change": 49.75,
+      "change_pct": 0.2,
+      "direction": "up"
+    },
+    {
+      "name": "Sensex",
+      "value": 78036.78,
+      "change": 78.26,
+      "change_pct": 0.1,
+      "direction": "up"
+    },
+    {
+      "name": "Brent $/bbl",
+      "value": 99.64,
+      "change": -1.63,
+      "change_pct": -1.61,
+      "direction": "down"
+    },
+    {
+      "name": "Gold $/oz",
+      "value": 4745.7,
+      "change": 63.8,
+      "change_pct": 1.36,
+      "direction": "up"
+    },
+    {
+      "name": "USD/INR",
+      "value": 94.15,
+      "change": -1.03,
+      "change_pct": -1.08,
+      "direction": "down"
+    },
+    {
+      "name": "US 10Y %",
+      "value": 4.36,
+      "change": -0.06,
+      "change_pct": -1.36,
+      "direction": "down"
+    },
+    {
+      "name": "Nikkei 225",
+      "value": 62833.84,
+      "change": 3320.72,
+      "change_pct": 5.58,
+      "direction": "up"
+    },
+    {
+      "name": "Gift Nifty",
+      "value": 24365.7,
+      "change": 44.75,
+      "change_pct": 0.18,
+      "direction": "up"
+    }
+  ],
+  "fii_dii": {
+    "date": "06-May-2026",
+    "fii_buy": 14459.21,
+    "fii_sell": 20294.11,
+    "fii_net": -5834.9,
+    "dii_buy": 22888.16,
+    "dii_sell": 16051.29,
+    "dii_net": 6836.87
+  }
+}

@@ -1,0 +1,18 @@
+---
+interface Props {
+  value: number;
+}
+
+const { value } = Astro.props;
+const clamped = Math.max(0, Math.min(100, value));
+const tone = clamped >= 70 ? 'var(--up)' : clamped >= 50 ? 'var(--moderate-impact)' : 'var(--down)';
+---
+
+<div class="mt-3 w-24">
+  <div class="h-1.5 rounded-full" style="background: var(--border);">
+    <div class="h-1.5 rounded-full transition-all" style={`width: ${clamped}%; background: ${tone};`}></div>
+  </div>
+  <div class="mono text-[10px] text-center mt-1" style="color: var(--text-muted);">
+    {clamped}% conf.
+  </div>
+</div>

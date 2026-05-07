@@ -1,0 +1,229 @@
+---
+import type { DailyAnalysis } from '../lib/types';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogTitle?: string;
+  analysis?: DailyAnalysis;
+}
+
+const {
+  title = 'BNPC Market Outlook — Daily Indian Stock Market Analysis',
+  description = 'Daily AI-powered Indian stock market morning outlook by BNPC Private Limited. Sector analysis, global cues, FII/DII flows.',
+  ogTitle,
+  analysis,
+} = Astro.props;
+
+const siteURL = 'https://market.bnpc.in';
+const canonicalURL = Astro.url.href;
+---
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalURL} />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content={ogTitle ?? title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonicalURL} />
+  <meta property="og:site_name" content="BNPC Market Outlook" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={ogTitle ?? title} />
+  <meta name="twitter:description" content={description} />
+
+  <link rel="alternate" type="application/rss+xml" title="BNPC Market Outlook RSS" href="/rss.xml" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <script is:inline>
+    (function () {
+      var key = 'bnpc-theme';
+      var stored = localStorage.getItem(key);
+      var prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      var useDark = stored ? stored === 'dark' : !prefersLight;
+      document.documentElement.classList.toggle('dark', useDark);
+    })();
+  </script>
+
+  <style is:global>
+    @font-face {
+      font-family: 'Inter';
+      src: url('/fonts/Inter-Regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Inter';
+      src: url('/fonts/Inter-SemiBold.woff2') format('woff2');
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'JetBrains Mono';
+      src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'JetBrains Mono';
+      src: url('/fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --bg:              #f7f8fc;
+      --bg-surface:      #ffffff;
+      --bg-elevated:     #f1f4fa;
+      --border:          #d9e0ec;
+      --text-primary:    #0f1f3d;
+      --text-secondary:  #253e6b;
+      --text-muted:      #5f7398;
+      --up:              #16a34a;
+      --down:            #dc2626;
+      --neutral:         #5f7398;
+      --high-impact:     #dc2626;
+      --moderate-impact: #b8860b;
+      --low-impact:      #4c5f85;
+      --accent:          #1e4fae;
+      --accent-bg:       rgba(30, 79, 174, 0.12);
+      --up-bg:           rgba(22, 163, 74, 0.12);
+      --down-bg:         rgba(220, 38, 38, 0.12);
+      --neutral-bg:      rgba(95, 115, 152, 0.12);
+      --up-border:       rgba(22, 163, 74, 0.30);
+      --down-border:     rgba(220, 38, 38, 0.30);
+      --neutral-border:  rgba(95, 115, 152, 0.30);
+      --bullish:         var(--up);
+      --bearish:         var(--down);
+      --bullish-bg:      var(--up-bg);
+      --bearish-bg:      var(--down-bg);
+      --bullish-border:  var(--up-border);
+      --bearish-border:  var(--down-border);
+    }
+
+    .dark {
+      --bg:              #070d1d;
+      --bg-surface:      #0b1630;
+      --bg-elevated:     #101f3f;
+      --border:          #223a69;
+      --text-primary:    #e8eefc;
+      --text-secondary:  #c6d5f5;
+      --text-muted:      #90a7d4;
+      --up:              #22c55e;
+      --down:            #ef4444;
+      --neutral:         #90a7d4;
+      --high-impact:     #ef4444;
+      --moderate-impact: #f2c14e;
+      --low-impact:      #90a7d4;
+      --accent:          #67a5ff;
+      --accent-bg:       rgba(103, 165, 255, 0.15);
+      --up-bg:           rgba(34, 197, 94, 0.14);
+      --down-bg:         rgba(239, 68, 68, 0.14);
+      --neutral-bg:      rgba(144, 167, 212, 0.14);
+      --up-border:       rgba(34, 197, 94, 0.30);
+      --down-border:     rgba(239, 68, 68, 0.30);
+      --neutral-border:  rgba(144, 167, 212, 0.30);
+      --bullish:         var(--up);
+      --bearish:         var(--down);
+      --bullish-bg:      var(--up-bg);
+      --bearish-bg:      var(--down-bg);
+      --bullish-border:  var(--up-border);
+      --bearish-border:  var(--down-border);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1000px 500px at 85% -10%, rgba(242, 193, 78, 0.08), transparent 60%),
+        radial-gradient(900px 500px at 10% -20%, rgba(103, 165, 255, 0.10), transparent 60%),
+        var(--bg);
+      color: var(--text-primary);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .mono { font-family: 'JetBrains Mono', Consolas, monospace; }
+
+    .card {
+      background: color-mix(in srgb, var(--bg-surface) 94%, #0a1c3f 6%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .card-elevated {
+      background: color-mix(in srgb, var(--bg-elevated) 92%, #d4a326 8%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    table thead tr { background: var(--bg-elevated) !important; }
+    table tbody tr { transition: background-color 0.2s ease; }
+    table tbody tr:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    @media print {
+      .no-print { display: none !important; }
+      body { font-size: 12px; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <slot />
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t" style="border-color: var(--border); background: var(--bg-surface);">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+      <div class="flex flex-col sm:flex-row items-start gap-4">
+        <img
+          src="/bnpc-logo.jpg"
+          alt="BNPC Private Limited"
+          class="w-28 h-20 object-contain rounded-lg border p-1 flex-shrink-0"
+          style="border-color: var(--border); background: var(--bg-elevated);"
+          loading="lazy"
+        />
+
+        <div class="flex-1 min-w-0">
+          <p class="text-xs leading-relaxed" style="color: var(--text-muted);">
+            <span class="font-semibold" style="color: var(--text-secondary);">Disclaimer:</span>
+            This report is prepared by BNPC Private Limited for informational purposes only and does not constitute investment advice, solicitation, or an offer to buy or sell any financial instrument.
+            Views and forecasts are subject to change without notice. Past performance is not indicative of future results.
+            <strong style="color: var(--text-secondary);">Markets carry risk. This is not investment advice.</strong>
+            Investors should conduct independent due diligence and consult a SEBI-registered adviser before making investment decisions.
+            BNPC, its directors, and affiliates may hold positions in instruments mentioned herein.
+          </p>
+          <p class="text-xs mt-2" style="color: var(--text-muted);">
+            © 2026 BNPC Private Limited. All rights reserved. &nbsp;·&nbsp; Analysis generated with AI assistance. For informational purposes only.
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

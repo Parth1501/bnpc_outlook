@@ -1,0 +1,38 @@
+---
+import type { GlobalCue } from '../lib/types';
+
+interface Props {
+  cues: GlobalCue[];
+}
+const { cues } = Astro.props;
+
+function fmtVal(cue: GlobalCue): string {
+  const v = typeof cue.value === 'number' ? cue.value.toLocaleString('en-IN') : cue.value;
+  return String(v);
+}
+function fmtPct(cue: GlobalCue): string {
+  const sign = cue.change_pct >= 0 ? '+' : '';
+  return `${sign}${cue.change_pct.toFixed(2)}%`;
+}
+---
+
+<!-- Doubles the items so the loop is seamless -->
+<div
+  class="no-print overflow-hidden border-b"
+  style="background: var(--bg-elevated); border-color: var(--border); height: 30px;"
+  aria-hidden="true"
+>
+  <div class="flex animate-ticker whitespace-nowrap" style="width: max-content;">
+    {[...cues, ...cues].map((cue) => (
+      <span class="inline-flex items-center gap-1.5 px-5 h-[30px] mono text-[11px] font-medium border-r"
+        style={`border-color: var(--border); color: ${cue.direction === 'up' ? 'var(--bullish)' : cue.direction === 'down' ? 'var(--bearish)' : 'var(--text-secondary)'}`}>
+        <span style="color: var(--text-muted); font-family: inherit;">{cue.name}</span>
+        <span>{fmtVal(cue)}</span>
+        <span class="text-[10px]">
+          {cue.direction === 'up' ? '▲' : cue.direction === 'down' ? '▼' : '—'}
+          {fmtPct(cue)}
+        </span>
+      </span>
+    ))}
+  </div>
+</div>

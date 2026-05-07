@@ -1,0 +1,378 @@
+[
+  {
+    "symbol": "BHARATFORG",
+    "company": "Bharat Forge Limited",
+    "timing": "During Market",
+    "expected_time_ist": "12:57",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "CARTRADE",
+    "company": "Cartrade Tech Limited",
+    "timing": "During Market",
+    "expected_time_ist": "11:37",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "CEIGALL",
+    "company": "Ceigall India Limited",
+    "timing": "During Market",
+    "expected_time_ist": "14:31",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "COROMANDEL",
+    "company": "Coromandel International Limited",
+    "timing": "During Market",
+    "expected_time_ist": "14:05",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "CRAFTSMAN",
+    "company": "Craftsman Automation Limited",
+    "timing": "During Market",
+    "expected_time_ist": "12:45",
+    "note": "Financial Results/Dividend/Other business matters"
+  },
+  {
+    "symbol": "ESCORTS",
+    "company": "Escorts Kubota Limited",
+    "timing": "During Market",
+    "expected_time_ist": "14:09",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "GATEWAY",
+    "company": "Gateway Distriparks Limited",
+    "timing": "During Market",
+    "expected_time_ist": "14:26",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "HARSHA",
+    "company": "Harsha Engineers International Limited",
+    "timing": "During Market",
+    "expected_time_ist": "13:03",
+    "note": "Financial Results/Dividend/Fund Raising"
+  },
+  {
+    "symbol": "MRF",
+    "company": "MRF Limited",
+    "timing": "During Market",
+    "expected_time_ist": "12:43",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "NILASPACES",
+    "company": "Nila Spaces Limited",
+    "timing": "During Market",
+    "expected_time_ist": "13:38",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "ODIGMA",
+    "company": "Odigma Consultancy Solutions Limited",
+    "timing": "During Market",
+    "expected_time_ist": "13:18",
+    "note": "Financial Results/Other business matters"
+  },
+  {
+    "symbol": "RSSOFTWARE",
+    "company": "R. S. Software (India) Limited",
+    "timing": "During Market",
+    "expected_time_ist": "14:19",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "STYLAMIND",
+    "company": "Stylam Industries Limited",
+    "timing": "During Market",
+    "expected_time_ist": "12:47",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "SURAJLTD",
+    "company": "Suraj Limited",
+    "timing": "During Market",
+    "expected_time_ist": "13:13",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "VTL",
+    "company": "Vardhman Textiles Limited",
+    "timing": "During Market",
+    "expected_time_ist": "12:57",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "WONDERLA",
+    "company": "Wonderla Holidays Limited",
+    "timing": "During Market",
+    "expected_time_ist": "14:21",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "ABLBL",
+    "company": "Aditya Birla Lifestyle Brands Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "ACMESOLAR",
+    "company": "Acme Solar Holdings Limited",
+    "timing": "TBD",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "ALLDIGI",
+    "company": "Alldigi Tech Limited",
+    "timing": "TBD",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "APOLLOPIPE",
+    "company": "Apollo Pipes Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend/Other business matters"
+  },
+  {
+    "symbol": "BAJAJHLDNG",
+    "company": "Bajaj Holdings & Investment Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "BIOCON",
+    "company": "Biocon Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "BRITANNIA",
+    "company": "Britannia Industries Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "BSE",
+    "company": "BSE Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "DABUR",
+    "company": "Dabur India Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "GCSL",
+    "company": "Gretex Corporate Services Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend/Fund Raising"
+  },
+  {
+    "symbol": "GFSTEELS",
+    "company": "Grand Foundry Limited",
+    "timing": "TBD",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "GLOBUSSPR",
+    "company": "Globus Spirits Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "GOACARBON",
+    "company": "Goa Carbon Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "GRAVITA",
+    "company": "Gravita India Limited",
+    "timing": "TBD",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "IGL",
+    "company": "Indraprastha Gas Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "INDOTHAI",
+    "company": "Indo Thai Securities Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend/Other business matters"
+  },
+  {
+    "symbol": "INNOVACAP",
+    "company": "Innova Captab Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Other business matters"
+  },
+  {
+    "symbol": "INVENTURE",
+    "company": "Inventure Growth & Securities Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Other business matters"
+  },
+  {
+    "symbol": "JARO",
+    "company": "Jaro Institute of Technology Management and Research Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "KARURVYSYA",
+    "company": "Karur Vysya Bank Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "KPEL",
+    "company": "K.P. Energy Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend/Other business matters"
+  },
+  {
+    "symbol": "KRYSTAL",
+    "company": "Krystal Integrated Services Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "LUPIN",
+    "company": "Lupin Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend/Other business matters"
+  },
+  {
+    "symbol": "MANAKALUCO",
+    "company": "Manaksia Aluminium Company Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend/Other business matters"
+  },
+  {
+    "symbol": "MARALOVER",
+    "company": "Maral Overseas Limited",
+    "timing": "TBD",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "MGL",
+    "company": "Mahanagar Gas Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "NOCIL",
+    "company": "NOCIL Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "NRBBEARING",
+    "company": "NRB Bearing Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "PARAGMILK",
+    "company": "Parag Milk Foods Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "PIDILITIND",
+    "company": "Pidilite Industries Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "PILITA",
+    "company": "PIL ITALICA LIFESTYLE LIMITED",
+    "timing": "TBD",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "PRUDENT",
+    "company": "Prudent Corporate Advisory Services Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "ROUTE",
+    "company": "ROUTE MOBILE LIMITED",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "RTNPOWER",
+    "company": "RattanIndia Power Limited",
+    "timing": "TBD",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "SANDUMA",
+    "company": "Sandur Manganese & Iron Ores Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend/Other business matters"
+  },
+  {
+    "symbol": "SHAKTIPUMP",
+    "company": "Shakti Pumps (India) Limited",
+    "timing": "TBD",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "SIRCA",
+    "company": "Sirca Paints India Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend/Other business matters"
+  },
+  {
+    "symbol": "SONATSOFTW",
+    "company": "Sonata Software Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  },
+  {
+    "symbol": "SOTL",
+    "company": "Savita Oil Technologies Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend/Other business matters"
+  },
+  {
+    "symbol": "STLNETWORK",
+    "company": "STL Networks Limited",
+    "timing": "TBD",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "SUNDROP",
+    "company": "Sundrop Brands Limited",
+    "timing": "TBD",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "SURYODAY",
+    "company": "Suryoday Small Finance Bank Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend/Fund Raising"
+  },
+  {
+    "symbol": "TARACHAND",
+    "company": "Tara Chand InfraLogistic Solutions Limited",
+    "timing": "TBD",
+    "note": "Financial Results"
+  },
+  {
+    "symbol": "THERMAX",
+    "company": "Thermax Limited",
+    "timing": "TBD",
+    "note": "Financial Results/Dividend"
+  }
+]

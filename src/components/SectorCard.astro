@@ -1,0 +1,67 @@
+---
+import type { SectorImpact } from '../lib/types';
+import ImpactBadge from './ImpactBadge.astro';
+
+interface Props { sector: SectorImpact; }
+const { sector } = Astro.props;
+
+const accentColor = {
+  High: {
+    Positive: 'var(--bullish-border)',
+    Negative: 'var(--bearish-border)',
+    Mixed:    'var(--moderate-border)',
+  },
+  Moderate: {
+    Positive: 'var(--bullish-border)',
+    Negative: 'var(--bearish-border)',
+    Mixed:    'var(--moderate-border)',
+  },
+  Low: {
+    Positive: 'var(--neutral-border)',
+    Negative: 'var(--neutral-border)',
+    Mixed:    'var(--neutral-border)',
+  },
+}[sector.impact]?.[sector.direction] ?? 'var(--border)';
+---
+
+<div class="card flex flex-col h-full border-t-2" style={`border-top-color: ${accentColor};`}>
+  <div class="px-4 py-3 flex-1">
+    <!-- Sector name -->
+    <div class="flex items-start justify-between gap-2 mb-2">
+      <h3 class="text-sm font-bold leading-tight" style="color: var(--text-primary);">
+        {sector.sector}
+      </h3>
+      <div class="flex flex-col items-end gap-1 flex-shrink-0">
+        <ImpactBadge type="impact" value={sector.impact} />
+        <ImpactBadge type="direction" value={sector.direction} />
+      </div>
+    </div>
+
+    <!-- Reason -->
+    <p class="text-xs leading-relaxed mb-3" style="color: var(--text-secondary);">
+      {sector.reason}
+    </p>
+
+    <!-- Stocks to watch -->
+    {sector.stocks_to_watch.length > 0 && (
+      <div>
+        <div class="label mb-1.5">Stocks to watch</div>
+        <div class="flex flex-col gap-1.5">
+          {sector.stocks_to_watch.map((s) => (
+            <div class="flex items-start gap-2">
+              <span
+                class="mono text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5"
+                style="background: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border);"
+              >
+                {s.symbol}
+              </span>
+              <span class="text-[11px] leading-snug" style="color: var(--text-muted);">
+                {s.note}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</div>

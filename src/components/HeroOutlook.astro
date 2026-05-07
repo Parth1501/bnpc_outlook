@@ -1,0 +1,91 @@
+---
+import type { DailyAnalysis } from '../lib/types';
+import ImpactBadge from './ImpactBadge.astro';
+import ConfidenceBar from './ConfidenceBar.astro';
+import { fmtDate } from '../lib/format';
+
+interface Props { analysis: DailyAnalysis; }
+const { analysis } = Astro.props;
+
+const biasColor = {
+  Bullish: 'var(--bullish)',
+  Bearish: 'var(--bearish)',
+  Neutral: 'var(--neutral)',
+}[analysis.overall_bias];
+
+const biasBg = {
+  Bullish: 'var(--bullish-bg)',
+  Bearish: 'var(--bearish-bg)',
+  Neutral: 'var(--neutral-bg)',
+}[analysis.overall_bias];
+
+const biasBorder = {
+  Bullish: 'var(--bullish-border)',
+  Bearish: 'var(--bearish-border)',
+  Neutral: 'var(--neutral-border)',
+}[analysis.overall_bias];
+
+const biasIcon = {
+  Bullish: '↑',
+  Bearish: '↓',
+  Neutral: '—',
+}[analysis.overall_bias];
+
+const confColor = analysis.confidence >= 70
+  ? 'var(--bullish)'
+  : analysis.confidence >= 50
+  ? 'var(--moderate)'
+  : 'var(--bearish)';
+---
+
+<div class="card p-6 sm:p-8">
+  <div class="flex flex-col sm:flex-row sm:items-start gap-6">
+
+    <!-- Left: Main content -->
+    <div class="flex-1 min-w-0">
+      <!-- Date + badge -->
+      <div class="flex items-center flex-wrap gap-2 mb-4">
+        <span class="label">{fmtDate(analysis.date)}</span>
+        <span class="label" style="color: var(--border);">·</span>
+        <span class="label">BNPC Morning Outlook</span>
+      </div>
+
+      <!-- Headline call -->
+      <h1 class="text-xl sm:text-2xl font-semibold leading-tight mb-3" style="color: var(--text-primary); letter-spacing: -0.02em;">
+        {analysis.headline_call}
+      </h1>
+
+      <!-- Summary -->
+      <p class="text-sm leading-relaxed mb-5" style="color: var(--text-secondary);">
+        {analysis.summary}
+      </p>
+
+      <!-- Key stats row -->
+      <div class="flex flex-wrap gap-2">
+        <ImpactBadge type="bias" value={analysis.overall_bias} size="sm" />
+        <span class="inline-flex items-center gap-1.5 mono text-xs font-semibold px-2 py-1 rounded border"
+          style={`border-color: ${confColor}40; background: ${confColor}10; color: ${confColor};`}>
+          AI Confidence: {analysis.confidence}%
+        </span>
+      </div>
+    </div>
+
+    <!-- Right: Bias indicator -->
+    <div class="flex-shrink-0">
+      <div
+        class="flex flex-col items-center justify-center rounded-2xl px-8 py-6 border"
+        style={`background: ${biasBg}; border-color: ${biasBorder}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);`}
+      >
+        <div class="mono text-4xl font-black leading-none mb-1" style={`color: ${biasColor};`}>
+          {biasIcon}
+        </div>
+        <div class="text-xs font-bold tracking-[0.15em] uppercase" style={`color: ${biasColor};`}>
+          {analysis.overall_bias}
+        </div>
+
+        <ConfidenceBar value={analysis.confidence} />
+      </div>
+    </div>
+
+  </div>
+</div>

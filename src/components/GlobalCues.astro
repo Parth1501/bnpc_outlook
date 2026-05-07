@@ -1,0 +1,47 @@
+---
+import type { GlobalCue } from '../lib/types';
+
+interface Props { cues: GlobalCue[]; }
+const { cues } = Astro.props;
+
+function fmtVal(cue: GlobalCue): string {
+  if (typeof cue.value === 'number') {
+    if (cue.value > 1000) return cue.value.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    return cue.value.toFixed(2);
+  }
+  return String(cue.value);
+}
+
+function fmtChange(cue: GlobalCue): string {
+  const sign = cue.change_pct >= 0 ? '+' : '';
+  return `${sign}${cue.change_pct.toFixed(2)}%`;
+}
+---
+
+<div>
+  <div class="label mb-3">Global Cues — Pre-market</div>
+  <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));">
+    {cues.map((cue) => {
+      const up = cue.direction === 'up';
+      const dn = cue.direction === 'down';
+      const color = up ? 'var(--bullish)' : dn ? 'var(--bearish)' : 'var(--neutral)';
+      const bg   = up ? 'var(--bullish-bg)' : dn ? 'var(--bearish-bg)' : 'var(--neutral-bg)';
+      const icon = up ? '▲' : dn ? '▼' : '—';
+      return (
+        <div class="card px-3 py-2.5 flex flex-col gap-0.5">
+          <div class="label truncate">{cue.name}</div>
+          <div class="mono text-base font-bold leading-none" style="color: var(--text-primary);">
+            {fmtVal(cue)}
+          </div>
+          <div
+            class="mono text-[11px] font-semibold inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded mt-0.5 w-fit"
+            style={`color: ${color}; background: ${bg};`}
+          >
+            <span>{icon}</span>
+            <span>{fmtChange(cue)}</span>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</div>

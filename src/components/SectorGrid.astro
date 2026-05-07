@@ -1,0 +1,14 @@
+---
+import type { SectorImpact } from '../lib/types';
+import SectorCard from './SectorCard.astro';
+
+interface Props { sectors: SectorImpact[]; }
+const { sectors } = Astro.props;
+---
+
+<div>
+  <div class="label mb-3">Sector Impact Grid</div>
+  <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+    {sectors.map((s) => <SectorCard sector={s} />)}
+  </div>
+</div>
