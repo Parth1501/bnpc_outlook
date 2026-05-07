@@ -80,12 +80,12 @@ ssh "${SSH_OPTS[@]}" "$HOST" "bash -lc '
   pnpm verify
   pnpm analyze
 
-  UPDATED_IST="\$(TZ=Asia/Kolkata date '+%d %b %H:%M IST')"
+  UPDATED_IST="\$(TZ=Asia/Kolkata date "+%d %b %H:%M IST")"
   mkdir -p public
-  printf '{ \"last_updated_ist\": \"%s\" }\n' \"\$UPDATED_IST\" > public/last-updated.json
+  printf "{ \"last_updated_ist\": \"%s\" }\n" \"\$UPDATED_IST\" > public/last-updated.json
 
   pnpm build
-  printf '{ \"last_updated_ist\": \"%s\" }\n' \"\$UPDATED_IST\" > dist/last-updated.json
+  printf "{ \"last_updated_ist\": \"%s\" }\n" \"\$UPDATED_IST\" > dist/last-updated.json
 
   mkdir -p \"${REMOTE_WEB_ROOT}\"
   rsync -a --delete dist/ \"${REMOTE_WEB_ROOT}/\"
