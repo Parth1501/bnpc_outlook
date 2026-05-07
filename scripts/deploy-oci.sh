@@ -9,12 +9,14 @@ set -euo pipefail
 # Optional:
 #   DEPLOY_MODE=rsync bash scripts/deploy-oci.sh ubuntu@YOUR_OCI_IP ...
 #   DEPLOY_REF=origin/main bash scripts/deploy-oci.sh ubuntu@YOUR_OCI_IP ...
+#   CLEAN_PULL=1 bash scripts/deploy-oci.sh ubuntu@YOUR_OCI_IP ...
 
 HOST="${1:-}"
 REMOTE_APP_DIR="${2:-/home/ubuntu/stock-outlook}"
 REMOTE_WEB_ROOT="${3:-/var/www/stock-outlook}"
 DEPLOY_MODE="${DEPLOY_MODE:-pull}"   # pull | rsync
 DEPLOY_REF="${DEPLOY_REF:-origin/main}"
+CLEAN_PULL="${CLEAN_PULL:-1}"        # 1 = hard reset/clean before pull
 
 if [[ -z "$HOST" ]]; then
   echo "Usage: bash scripts/deploy-oci.sh <user@host> [remote_app_dir] [remote_web_root]"
@@ -44,6 +46,12 @@ ssh "$HOST" "bash -lc '
       exit 1
     fi
     git fetch --all --prune
+    if [[ \"${CLEAN_PULL}\" == \"1\" ]]; then
+      # OCI box contains generated artifacts (tmp/, analyses json, logs, etc.).
+      # Force-clean to avoid pull conflicts during deployment.
+      git reset --hard
+      git clean -fd
+    fi
     if [[ \"${DEPLOY_REF}\" == origin/* ]]; then
       BRANCH=\"${DEPLOY_REF#origin/}\"
       git checkout \"${BRANCH}\"
