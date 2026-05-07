@@ -79,11 +79,17 @@ ssh "${SSH_OPTS[@]}" "$HOST" "bash -lc '
   pnpm fetch-results
   pnpm verify
   pnpm analyze
+
+  UPDATED_IST="\$(TZ=Asia/Kolkata date '+%d %b %H:%M IST')"
+  mkdir -p public
+  printf '{ \"last_updated_ist\": \"%s\" }\n' \"\$UPDATED_IST\" > public/last-updated.json
+
   pnpm build
+  printf '{ \"last_updated_ist\": \"%s\" }\n' \"\$UPDATED_IST\" > dist/last-updated.json
 
   mkdir -p \"${REMOTE_WEB_ROOT}\"
   rsync -a --delete dist/ \"${REMOTE_WEB_ROOT}/\"
-  echo \"Deploy complete at \$(date -Iseconds)\"
+  echo \"Deploy complete at \$(date -Iseconds) (Updated \$UPDATED_IST)\"
 '"
 
 echo "==> Deployment finished"
