@@ -20,8 +20,6 @@ if ! flock -n 9; then
   exit 0
 fi
 
-chmod +x /home/ubuntu/stock-outlook/scripts/run-daily.sh
-
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/$(date +%Y-%m-%d).log"
 exec >>"$LOG_FILE" 2>&1

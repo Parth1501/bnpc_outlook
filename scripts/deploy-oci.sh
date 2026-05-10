@@ -67,6 +67,9 @@ if [[ "$DEPLOY_MODE" == "pull" ]]; then
     git checkout --detach "$DEPLOY_REF"
   fi
 fi
+
+chmod +x scripts/run-daily.sh
+
 echo "Code sync complete at $(date -Iseconds)"
 REMOTE_SCRIPT
 
