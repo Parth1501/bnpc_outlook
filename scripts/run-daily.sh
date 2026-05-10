@@ -11,6 +11,16 @@ APP_DIR="${APP_DIR:-/home/ubuntu/stock-outlook}"
 WEB_ROOT="${WEB_ROOT:-/var/www/stock-outlook}"
 DEPLOY_REF="${DEPLOY_REF:-origin/main}"
 LOG_DIR="${LOG_DIR:-/var/log/outlook}"
+LOCK_FILE="${LOCK_FILE:-/tmp/stock-outlook-daily.lock}"
+
+# Prevent overlapping runs (manual + cron / duplicate cron entries).
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+  echo "[SKIP] Another run is already in progress (lock: $LOCK_FILE)"
+  exit 0
+fi
+
+chmod +x /home/ubuntu/stock-outlook/scripts/run-daily.sh
 
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/$(date +%Y-%m-%d).log"

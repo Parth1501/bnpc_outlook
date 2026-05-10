@@ -232,6 +232,7 @@ Rules:
 - If a stock is only in verified_results.pending_scheduled (or not declared in today_results), you MUST NOT claim actual results or YoY/PAT outcomes. Say only "scheduled/awaited" etc.
 - If declared_with_metrics is empty, do not put company-specific quantitative earnings (no "+X% PAT YoY" etc.) in headline_call, summary, or key_drivers; use themes, flows, and global cues only.
 - Cover all 10 sectors in sector_impact (use Low if no catalyst).
+- In key_drivers and sector_impact: use impact ONLY as magnitude size (High|Moderate|Low). Use direction ONLY for bullish/bearish tone (Positive|Negative|Mixed). Never put Positive, Negative, or Mixed in impact.
 - No buy/sell/target/stop-loss advice.
 - Confidence range 35-85.
 
@@ -319,6 +320,67 @@ function parseJsonObject(text: string): unknown {
     .replace(/\s*```$/i, '')
     .trim();
   return JSON.parse(cleaned);
+}
+
+const IMPACT_MAGNITUDE = new Set(['High', 'Moderate', 'Low']);
+const IMPACT_SENTIMENT = new Set(['Positive', 'Negative', 'Mixed']);
+
+function canonicalImpactWord(raw: unknown): string {
+  const s = String(raw ?? '').trim();
+  const lowered = s.toLowerCase();
+  const mag: Record<string, string> = { high: 'High', moderate: 'Moderate', low: 'Low' };
+  const dir: Record<string, string> = { positive: 'Positive', negative: 'Negative', mixed: 'Mixed' };
+  return mag[lowered] ?? dir[lowered] ?? s;
+}
+
+/** LLMs sometimes assign Positive/Negative/Mixed to `impact` or swap magnitude vs sentiment. */
+function fixImpactDirectionPair(
+  impact: unknown,
+  direction: unknown
+): { impact: string; direction: string } {
+  let i = canonicalImpactWord(impact);
+  let d = canonicalImpactWord(direction);
+  const iMag = IMPACT_MAGNITUDE.has(i);
+  const dMag = IMPACT_MAGNITUDE.has(d);
+  const iSent = IMPACT_SENTIMENT.has(i);
+  const dSent = IMPACT_SENTIMENT.has(d);
+
+  if (iSent && dMag) {
+    const t = i;
+    i = d;
+    d = t;
+  } else if (iSent && !dMag) {
+    if (!dSent) {
+      d = i;
+      i = 'Moderate';
+    } else {
+      i = 'Moderate';
+    }
+  }
+
+  const outI = IMPACT_MAGNITUDE.has(i) ? i : 'Moderate';
+  const outD = IMPACT_SENTIMENT.has(d) ? d : 'Mixed';
+  return { impact: outI, direction: outD };
+}
+
+function normalizeAnalysisImpactDirectionEnums(parsed: unknown): void {
+  if (typeof parsed !== 'object' || parsed == null || Array.isArray(parsed)) return;
+  const obj = parsed as Record<string, unknown>;
+
+  const fixArray = (key: string) => {
+    const arr = obj[key];
+    if (!Array.isArray(arr)) return;
+    for (const row of arr) {
+      if (typeof row !== 'object' || row == null || Array.isArray(row)) continue;
+      const r = row as Record<string, unknown>;
+      const pair = fixImpactDirectionPair(r.impact, r.direction);
+      r.impact = pair.impact;
+      r.direction = pair.direction;
+    }
+  };
+
+  fixArray('key_drivers');
+  fixArray('sector_impact');
 }
 
 function normalizeCalendar(raw: unknown): CalendarEvent[] {
@@ -618,6 +680,7 @@ async function main() {
   for (let attempt = 1; attempt <= 2 && lastResponse; attempt++) {
     try {
       const parsed = parseJsonObject(lastResponse);
+      normalizeAnalysisImpactDirectionEnums(parsed);
       const validated = AnalysisSchema.safeParse(parsed);
       if (validated.success) {
         finalData = validated.data;
