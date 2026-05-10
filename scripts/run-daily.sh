@@ -53,6 +53,8 @@ else
   git checkout --detach "$DEPLOY_REF"
 fi
 
+chmod +x /home/ubuntu/stock-outlook/scripts/run-daily.sh
+
 echo "[RUN] pnpm install --frozen-lockfile"
 pnpm install --frozen-lockfile
 
