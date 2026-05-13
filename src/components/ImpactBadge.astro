@@ -31,12 +31,24 @@ const colorMap: Record<ColorKey, string> = {
 const labelMap: Record<string, string> = {
   High: '● High', Moderate: '● Mod', Low: '○ Low',
   Positive: '↑ Positive', Negative: '↓ Negative', Mixed: '↔ Mixed',
-  Bullish: '↑ Bullish', Bearish: '↓ Bearish', Neutral: '— Neutral',
+  Bullish: '↑ Bullish',
+  'Strongly Bullish': '⇗ Strongly ↑',
+  Bearish: '↓ Bearish',
+  'Strongly Bearish': '⇘ Strongly ↓',
+  Neutral: '— Neutral',
 };
 
-const key = value.toLowerCase() as ColorKey;
-const colorClass = colorMap[key] ?? colorMap.default;
-const label = labelMap[value as string] ?? value;
+function biasColorKey(v: string): ColorKey {
+  if (v === 'Strongly Bullish' || v === 'Bullish') return 'bullish';
+  if (v === 'Strongly Bearish' || v === 'Bearish') return 'bearish';
+  if (v === 'Neutral') return 'neutral';
+  return 'default';
+}
+
+const rawStr = String(value);
+const colorClass =
+  type === 'bias' ? (colorMap[biasColorKey(rawStr)] ?? colorMap.default) : (colorMap[rawStr.toLowerCase() as ColorKey] ?? colorMap.default);
+const label = labelMap[rawStr] ?? value;
 ---
 
 <span class={`inline-flex items-center font-mono font-semibold rounded border tracking-tight ${px} ${fs} ${colorClass}`}>

@@ -1,8 +1,12 @@
 ---
-import type { GlobalCue } from '../lib/types';
+import type { GlobalCue, IndiaVixSnapshot } from '../lib/types';
+import IndiaVixCard from './IndiaVixCard.astro';
 
-interface Props { cues: GlobalCue[]; }
-const { cues } = Astro.props;
+interface Props {
+  cues: GlobalCue[];
+  indiaVix?: IndiaVixSnapshot | null;
+}
+const { cues, indiaVix } = Astro.props;
 
 function fmtVal(cue: GlobalCue): string {
   if (typeof cue.value === 'number') {
@@ -20,6 +24,7 @@ function fmtChange(cue: GlobalCue): string {
 
 <div>
   <div class="label mb-3">Global Cues — Pre-market</div>
+  <IndiaVixCard snapshot={indiaVix} />
   <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));">
     {cues.map((cue) => {
       const up = cue.direction === 'up';

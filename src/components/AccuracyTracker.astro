@@ -27,7 +27,11 @@ const { review } = Astro.props;
         </div>
         <div class="text-[10px] font-bold tracking-wider uppercase mt-1"
           style={review.correct ? 'color: var(--bullish);' : 'color: var(--bearish);'}>
-          {review.correct ? 'Correct' : 'Missed'}
+          {review.correct
+            ? 'Correct'
+            : review.verdict === 'soft_miss'
+              ? 'Soft miss'
+              : 'Missed'}
         </div>
       </div>
 
@@ -55,6 +59,19 @@ const { review } = Astro.props;
 
         <div class="mono text-xs" style="color: var(--text-muted);">
           Nifty closed at {review.nifty_close.toLocaleString('en-IN')}
+          {(review.bias_confidence_at_call || review.factors_aligned_at_call != null) && (
+            <span class="block mt-1">
+              {review.bias_confidence_at_call != null && (
+                <>At verify: label confidence <span class="font-semibold" style="color: var(--text-secondary);">{review.bias_confidence_at_call}</span></>
+              )}
+              {review.factors_aligned_at_call != null && (
+                <>{review.bias_confidence_at_call != null ? ' · ' : ''}factors aligned {review.factors_aligned_at_call}/5</>
+              )}
+              {review.verdict != null && (
+                <> · verdict <span class="font-semibold" style="color: var(--text-secondary);">{review.verdict}</span></>
+              )}
+            </span>
+          )}
         </div>
       </div>
 

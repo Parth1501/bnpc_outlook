@@ -21,7 +21,7 @@ if (!analysis) {
   return new Response('No analysis data found.', { status: 503 });
 }
 
-const ogDescription = `${analysis.overall_bias} | ${analysis.confidence}% confidence | ${analysis.headline_call}`;
+const ogDescription = `${analysis.overall_bias} | AI conviction ${analysis.confidence}/100 | ${analysis.headline_call}`;
 ---
 
 <Layout
@@ -42,7 +42,7 @@ const ogDescription = `${analysis.overall_bias} | ${analysis.confidence}% confid
       <!-- 2-col grid: GlobalCues + FII/DII -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2">
-          <GlobalCues cues={analysis.global_cues} />
+          <GlobalCues cues={analysis.global_cues} indiaVix={analysis.india_vix} />
         </div>
         <div>
           <FIIDIIBlock data={analysis.fii_dii} />

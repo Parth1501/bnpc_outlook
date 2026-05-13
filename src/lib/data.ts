@@ -1,3 +1,4 @@
+import { mergeAnalysisDefaultsIntoClone } from './merge-analysis-for-parse';
 import { AnalysisSchema, type DailyAnalysis } from './types';
 
 const analyses = import.meta.glob<{ default: DailyAnalysis }>('../data/analyses/*.json');
@@ -8,7 +9,7 @@ export async function getAllAnalyses(): Promise<DailyAnalysis[]> {
       .sort(([a], [b]) => b.localeCompare(a))
       .map(async ([, loader]) => {
         const mod = await loader();
-        return AnalysisSchema.parse(mod.default);
+        return AnalysisSchema.parse(mergeAnalysisDefaultsIntoClone(mod.default));
       })
   );
   return entries;

@@ -1,19 +1,13 @@
 /**
  * verify-yesterday.ts
- * Fetches yesterday's actual Nifty close, compares to our prediction,
+ * Fetches yesterday's actual Nifty open-to-close move, compares to our prediction,
  * saves accuracy_review back into yesterday's analysis JSON.
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
-
-interface DailyAnalysis {
-  date: string;
-  overall_bias: 'Bullish' | 'Bearish' | 'Neutral';
-  headline_call: string;
-  accuracy_review?: object;
-  [key: string]: unknown;
-}
+import { mergeAnalysisDefaultsIntoClone } from '../src/lib/merge-analysis-for-parse';
+import { AnalysisSchema, type Bias, type BiasLabelConfidence } from '../src/lib/types';
 
 function prevWeekday(date: Date): Date {
   const d = new Date(date);
@@ -36,8 +30,8 @@ function istDate(): Date {
 async function fetchNiftyClose(date: string): Promise<{ close: number; change_pct: number } | null> {
   try {
     const start = Math.floor(new Date(date + 'T00:00:00+05:30').getTime() / 1000);
-    const end   = Math.floor(new Date(date + 'T23:59:59+05:30').getTime() / 1000);
-    const url   = `https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI?period1=${start}&period2=${end}&interval=1d`;
+    const end = Math.floor(new Date(date + 'T23:59:59+05:30').getTime() / 1000);
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI?period1=${start}&period2=${end}&interval=1d`;
 
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BNPC-Bot/1.0)' },
@@ -46,7 +40,7 @@ async function fetchNiftyClose(date: string): Promise<{ close: number; change_pc
 
     if (!res.ok) return null;
 
-    const data = await res.json() as {
+    const data = (await res.json()) as {
       chart: {
         result: Array<{
           indicators: {
@@ -63,9 +57,9 @@ async function fetchNiftyClose(date: string): Promise<{ close: number; change_pc
     if (!result) return null;
 
     const closes = result.indicators.quote[0].close;
-    const opens  = result.indicators.quote[0].open;
-    const close  = closes[closes.length - 1];
-    const open   = opens[0];
+    const opens = result.indicators.quote[0].open;
+    const close = closes[closes.length - 1];
+    const open = opens[0];
 
     if (!close || !open) return null;
 
@@ -77,50 +71,61 @@ async function fetchNiftyClose(date: string): Promise<{ close: number; change_pc
   }
 }
 
-function biasToDirection(bias: string): 'up' | 'down' | 'flat' {
-  if (bias === 'Bullish') return 'up';
-  if (bias === 'Bearish') return 'down';
-  return 'flat';
+function isBullishBias(bias: Bias): boolean {
+  return bias === 'Bullish' || bias === 'Strongly Bullish';
 }
 
-function isCorrect(
-  predicted: string,
-  actual_pct: number,
-): boolean {
-  const THRESHOLD = 0.3; // ±0.3% is considered flat
-  if (Math.abs(actual_pct) < THRESHOLD) return predicted === 'Neutral';
-  if (actual_pct > THRESHOLD) return predicted === 'Bullish';
-  return predicted === 'Bearish';
+function isBearishBias(bias: Bias): boolean {
+  return bias === 'Bearish' || bias === 'Strongly Bearish';
+}
+
+/** Session open→close move vs pre-open directional label (±THRESH treated as flat). */
+function isDirectionallyCorrect(bias: Bias, actual_pct: number, threshold: number): boolean {
+  if (Math.abs(actual_pct) < threshold) return bias === 'Neutral';
+  if (actual_pct > threshold) return isBullishBias(bias);
+  if (actual_pct < -threshold) return isBearishBias(bias);
+  return false;
+}
+
+function verdictFor(
+  correct: boolean,
+  biasConfidence: BiasLabelConfidence | undefined,
+): 'hit' | 'soft_miss' | 'hard_miss' {
+  if (correct) return 'hit';
+  if (biasConfidence === 'low') return 'soft_miss';
+  return 'hard_miss';
 }
 
 async function main() {
   const today = istDate();
   const yesterday = prevWeekday(today);
   const yesterdayStr = toYMD(yesterday);
-  const dayBeforeYesterday = prevWeekday(yesterday);
-  const dayBeforeStr = toYMD(dayBeforeYesterday);
 
   console.log(`📈 Verifying yesterday's (${yesterdayStr}) call...`);
 
-  // Find yesterday's analysis file
   const analysisPath = path.join(process.cwd(), 'src', 'data', 'analyses', `${yesterdayStr}.json`);
   if (!fs.existsSync(analysisPath)) {
     console.log(`  No analysis file for ${yesterdayStr} — skipping verification`);
     return;
   }
 
-  const analysis = JSON.parse(fs.readFileSync(analysisPath, 'utf-8')) as DailyAnalysis;
+  const raw = JSON.parse(fs.readFileSync(analysisPath, 'utf-8')) as unknown;
+  const merged = mergeAnalysisDefaultsIntoClone(raw);
+  const parsed = AnalysisSchema.safeParse(merged);
+  if (!parsed.success) {
+    console.warn(`  Analysis file failed schema (${parsed.error.message.slice(0, 200)}) — skipping`);
+    return;
+  }
+  const analysis = parsed.data;
 
   if (analysis.accuracy_review) {
     console.log(`  Already has accuracy_review — skipping`);
-    // Still save to yesterday-review.json for today's prompt
     const reviewPath = path.join(process.cwd(), 'tmp', 'yesterday-review.json');
     fs.mkdirSync(path.dirname(reviewPath), { recursive: true });
     fs.writeFileSync(reviewPath, JSON.stringify(analysis.accuracy_review, null, 2));
     return;
   }
 
-  // Fetch yesterday's actual Nifty close
   const niftyData = await fetchNiftyClose(yesterdayStr);
   if (!niftyData) {
     console.warn('  Could not fetch Nifty data — skipping');
@@ -128,30 +133,42 @@ async function main() {
   }
 
   const { close, change_pct } = niftyData;
+  const THRESH = 0.3;
   const actual_direction: 'up' | 'down' | 'flat' =
-    Math.abs(change_pct) < 0.3 ? 'flat' : change_pct > 0 ? 'up' : 'down';
+    Math.abs(change_pct) < THRESH ? 'flat' : change_pct > 0 ? 'up' : 'down';
 
-  const correct = isCorrect(analysis.overall_bias, change_pct);
+  const biasConfidence = analysis.bias_confidence;
+  const correct = isDirectionallyCorrect(analysis.overall_bias, change_pct, THRESH);
+  const verdict = verdictFor(correct, biasConfidence);
+  const factorsAlignedAtCall = analysis.bias_rationale.factors_aligned;
 
   const accuracyReview = {
     yesterday_prediction: analysis.overall_bias,
-    yesterday_headline:   analysis.headline_call,
-    actual_move:          change_pct,
+    yesterday_headline: analysis.headline_call,
+    actual_move: change_pct,
     actual_direction,
-    nifty_close:          close,
+    nifty_close: close,
     correct,
+    factors_aligned_at_call: factorsAlignedAtCall,
+    bias_confidence_at_call: biasConfidence,
+    verdict,
   };
 
-  // Patch the analysis file
-  analysis.accuracy_review = accuracyReview;
-  fs.writeFileSync(analysisPath, JSON.stringify(analysis, null, 2));
-  console.log(`  Result: ${correct ? '✓ Correct' : '✗ Missed'} (Nifty ${change_pct > 0 ? '+' : ''}${change_pct}%)`);
+  const outRecord = { ...analysis, accuracy_review: accuracyReview };
+  fs.writeFileSync(analysisPath, JSON.stringify(outRecord, null, 2));
 
-  // Also save for today's prompt context
+  const verdictNote = verdict === 'hit' ? '' : ` (${verdict})`;
+  console.log(
+    `  Result: ${correct ? '✓ Correct' : '✗ Missed'}${verdictNote} (Nifty ${change_pct > 0 ? '+' : ''}${change_pct}%)`,
+  );
+
   const reviewPath = path.join(process.cwd(), 'tmp', 'yesterday-review.json');
   fs.mkdirSync(path.dirname(reviewPath), { recursive: true });
   fs.writeFileSync(reviewPath, JSON.stringify(accuracyReview, null, 2));
   console.log(`✓ Saved yesterday-review.json`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

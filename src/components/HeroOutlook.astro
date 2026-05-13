@@ -3,6 +3,7 @@ import type { DailyAnalysis } from '../lib/types';
 import ImpactBadge from './ImpactBadge.astro';
 import ConfidenceBar from './ConfidenceBar.astro';
 import { fmtDate } from '../lib/format';
+import { getConvictionBucket } from '../lib/conviction';
 
 interface Props {
   analysis: DailyAnalysis;
@@ -10,35 +11,66 @@ interface Props {
 }
 const { analysis, lastUpdatedIst = '' } = Astro.props;
 
+const conviction = getConvictionBucket(analysis.confidence);
+
+type BiasTone = 'bull' | 'bear' | 'neutral';
+
+function biasTone(b: DailyAnalysis['overall_bias']): BiasTone {
+  if (b === 'Bullish' || b === 'Strongly Bullish') return 'bull';
+  if (b === 'Bearish' || b === 'Strongly Bearish') return 'bear';
+  return 'neutral';
+}
+
+const tone = biasTone(analysis.overall_bias);
+
 const biasColor = {
-  Bullish: 'var(--bullish)',
-  Bearish: 'var(--bearish)',
-  Neutral: 'var(--neutral)',
-}[analysis.overall_bias];
+  bull: 'var(--bullish)',
+  bear: 'var(--bearish)',
+  neutral: 'var(--neutral)',
+}[tone];
 
 const biasBg = {
-  Bullish: 'var(--bullish-bg)',
-  Bearish: 'var(--bearish-bg)',
-  Neutral: 'var(--neutral-bg)',
-}[analysis.overall_bias];
+  bull: 'var(--bullish-bg)',
+  bear: 'var(--bearish-bg)',
+  neutral: 'var(--neutral-bg)',
+}[tone];
 
 const biasBorder = {
-  Bullish: 'var(--bullish-border)',
-  Bearish: 'var(--bearish-border)',
-  Neutral: 'var(--neutral-border)',
-}[analysis.overall_bias];
+  bull: 'var(--bullish-border)',
+  bear: 'var(--bearish-border)',
+  neutral: 'var(--neutral-border)',
+}[tone];
 
-const biasIcon = {
+const biasIcon: Record<DailyAnalysis['overall_bias'], string> = {
+  'Strongly Bullish': '↑↑',
   Bullish: '↑',
-  Bearish: '↓',
   Neutral: '—',
-}[analysis.overall_bias];
+  Bearish: '↓',
+  'Strongly Bearish': '↓↓',
+};
 
-const confColor = analysis.confidence >= 70
-  ? 'var(--bullish)'
-  : analysis.confidence >= 50
-  ? 'var(--moderate)'
-  : 'var(--bearish)';
+const horizonLabel: Record<DailyAnalysis['bias_horizon'], string> = {
+  open: 'Open (first prints)',
+  morning_session: 'Morning session',
+  full_day: 'Full session',
+};
+
+const biasConfidenceLabel: Record<DailyAnalysis['bias_confidence'], string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+};
+
+const factorLabels: Array<{ key: keyof DailyAnalysis['bias_rationale']; label: string }> = [
+  { key: 'news_tone', label: 'News tone' },
+  { key: 'global_cues', label: 'Global cues' },
+  { key: 'fii_dii', label: 'FII/DII' },
+  { key: 'vix', label: 'VIX' },
+  { key: 'calendar', label: 'Calendar' },
+];
+
+const METHODOLOGY =
+  "Numeric conviction (0–100) is the model's self-rated certainty in the narrative. Label confidence (low/medium/high) describes how tightly the five-factor rubric aligned for the opening-bias tag. Neither is a market forecast or probability of returns.";
 ---
 
 <div class="card p-6 sm:p-8">
@@ -58,6 +90,13 @@ const confColor = analysis.confidence >= 70
         </span>
       </div>
 
+      <span
+        class="inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] px-2.5 py-1 rounded-full border mb-3"
+        style="border-color: var(--accent); color: var(--accent); background: var(--accent-bg);"
+      >
+        🤖 AI-generated analysis
+      </span>
+
       <!-- Headline call -->
       <h1 class="text-xl sm:text-2xl font-semibold leading-tight mb-3" style="color: var(--text-primary); letter-spacing: -0.02em;">
         {analysis.headline_call}
@@ -69,12 +108,54 @@ const confColor = analysis.confidence >= 70
       </p>
 
       <!-- Key stats row -->
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap items-center gap-2 mb-3">
         <ImpactBadge type="bias" value={analysis.overall_bias} size="sm" />
-        <span class="inline-flex items-center gap-1.5 mono text-xs font-semibold px-2 py-1 rounded border"
-          style={`border-color: ${confColor}40; background: ${confColor}10; color: ${confColor};`}>
-          AI Confidence: {analysis.confidence}%
+        <span
+          class="inline-flex items-baseline gap-1.5 mono text-[10px] font-semibold px-2 py-1 rounded border"
+          style="border-color: var(--border); background: var(--bg-elevated); color: var(--text-muted);"
+        >
+          <span class="uppercase tracking-wider">Horizon</span>
+          <span style="color: var(--text-secondary);">{horizonLabel[analysis.bias_horizon]}</span>
         </span>
+        <span
+          class="inline-flex items-baseline gap-1.5 mono text-[10px] font-semibold px-2 py-1 rounded border"
+          style="border-color: var(--border); background: var(--bg-elevated); color: var(--text-muted);"
+        >
+          <span class="uppercase tracking-wider">Label conf.</span>
+          <span style="color: var(--text-secondary);">{biasConfidenceLabel[analysis.bias_confidence]}</span>
+        </span>
+        <span
+          class="inline-flex items-baseline gap-2 mono text-xs font-semibold px-2 py-1 rounded border flex-wrap"
+          style={`border-color: ${conviction.color}55; background: ${conviction.color}12;`}
+        >
+          <span style={`color: ${conviction.color};`}>{conviction.label}</span>
+          <span class="text-[11px] font-normal opacity-90" style="color: var(--text-muted);">
+            {analysis.confidence} / 100
+          </span>
+        </span>
+      </div>
+      <p class="text-[11px] leading-relaxed mb-1 max-w-2xl" style="color: var(--text-muted);">
+        {METHODOLOGY}
+      </p>
+
+      <div class="mt-4 rounded-lg border px-3 py-3 max-w-2xl" style="border-color: var(--border); background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);">
+        <div class="label mb-2">Opening bias — rubric</div>
+        <p class="text-xs leading-relaxed mb-3" style="color: var(--text-secondary);">
+          {analysis.bias_rationale.one_line}
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] mono">
+          {factorLabels.map(({ key, label }) => (
+            <div class="flex justify-between gap-2 border rounded px-2 py-1.5" style="border-color: var(--border);">
+              <span style="color: var(--text-muted);">{label}</span>
+              <span class="font-semibold uppercase" style="color: var(--text-secondary);">
+                {analysis.bias_rationale[key]}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p class="mt-2 text-[10px] leading-relaxed" style="color: var(--text-muted);">
+          Factors aligned with tag: <span class="font-semibold mono" style="color: var(--text-secondary);">{analysis.bias_rationale.factors_aligned}</span> / 5
+        </p>
       </div>
     </div>
 
@@ -85,13 +166,13 @@ const confColor = analysis.confidence >= 70
         style={`background: ${biasBg}; border-color: ${biasBorder}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);`}
       >
         <div class="mono text-4xl font-black leading-none mb-1" style={`color: ${biasColor};`}>
-          {biasIcon}
+          {biasIcon[analysis.overall_bias]}
         </div>
         <div class="text-xs font-bold tracking-[0.15em] uppercase" style={`color: ${biasColor};`}>
           {analysis.overall_bias}
         </div>
 
-        <ConfidenceBar value={analysis.confidence} />
+        <ConfidenceBar value={analysis.confidence} accentColor={conviction.color} />
       </div>
     </div>
 

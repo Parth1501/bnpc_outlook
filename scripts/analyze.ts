@@ -6,7 +6,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { AnalysisSchema } from '../src/lib/types';
+import { normalizeBiasFieldsForAnalysisParse } from '../src/lib/merge-analysis-for-parse';
+import { AnalysisSchema, IndiaVixSnapshotSchema, type IndiaVixSnapshot } from '../src/lib/types';
 
 type Role = 'system' | 'user' | 'assistant';
 type ChatMessage = { role: Role; content: string };
@@ -62,8 +63,73 @@ const JSON_SAFE_MODEL = 'google/gemini-2.5-flash';
 const DEFAULT_SITE_URL = 'https://localhost';
 const APP_TITLE = 'Indian Market Outlook';
 const DEFAULT_ANALYZE_MAX_TOKENS = 32000;
-const SYSTEM_PROMPT =
-  'You are a senior Indian equities analyst. Return ONLY valid JSON (no markdown). Be concise and data-grounded: never invent earnings, EPS, or YoY percentages. Use NSE symbols, explain mechanisms, avoid buy/sell advice, keep passthrough fields unchanged from input.';
+const SYSTEM_PROMPT = [
+  'You are a senior Indian equities analyst for BNPC, an Indian market research platform.',
+  'Return ONLY valid JSON (no markdown fences). Your output schema is fixed — keep all passthrough fields unchanged from input.',
+  '',
+  '## ABSOLUTE RULES — NON-NEGOTIABLE',
+  '',
+  'ZERO FABRICATION: Never invent headlines, numbers, company names, ticker symbols, prices, percentages, earnings, EPS, PAT, YoY figures, or events.',
+  'Do NOT use training-data knowledge to fill gaps. Do NOT merge information from two news items to create a claim neither item made alone.',
+  'Do NOT predict, forecast, or speculate ("will rise", "expected to", "likely to").',
+  '',
+  'HARD GROUNDING — company results:',
+  '  You MAY cite a specific number (EPS, PAT, revenue, YoY %) for a company ONLY IF:',
+  '    (a) that exact number appears for that symbol in <verified_results>.declared_with_metrics, OR',
+  '    (b) that EXACT number appears verbatim in a <news> title or description for THAT company.',
+  '  A number found in a headline about Company A MUST NOT be attributed to Company B.',
+  '  If declared_with_metrics is empty, write only themes and flows — no company-specific earnings figures anywhere.',
+  '',
+  'LANGUAGE — "declared" / official results:',
+  '  Do NOT say results were "declared", "announced", "published", "released", or "are out" for a company unless EITHER:',
+  '    (i) that exact claim appears in a specific <news> title or description for that company (same name or NSE symbol in the same item), OR',
+  '    (ii) that symbol appears in <verified_results>.declared_with_metrics with a non-null metric you are citing.',
+  '  If news only reports numbers, commentary, or "Q4" without clear official wording, use hedged language: "headlines reference", "reports mention", "media coverage" — not "declared" or "announced".',
+  '  Never imply an exchange or board "declaration" from inference or from another company\'s headline.',
+  '',
+  'Never use the exact phrase "Verified results" or imply pipeline verification in user-visible text — that misreads the product; use publisher names from input or hedged wording.',
+  '',
+  'HARD GROUNDING — market levels:',
+  '  Quote Nifty/Sensex/Dow/Nasdaq/Brent/Gold/USD-INR/US 10Y/Nikkei ONLY from <global_cues> matching by name.',
+  '  Never substitute figures from memory or news.',
+  '',
+  'HARD GROUNDING — India VIX:',
+  '  Quote only the value in <india_vix>. If null, do not mention a VIX number.',
+  '',
+  'HANDLE UNCERTAINTY:',
+  '  If a news item is ambiguous about which company a figure belongs to, do NOT include that figure.',
+  '  If items conflict, present both views — do not resolve the conflict by choosing one.',
+  '  If insufficient data exists for a field, use generic language ("awaited", "no specific data") rather than inventing content.',
+  '',
+  'Other rules: Use NSE symbols. Explain mechanisms. No buy/sell/target/stop-loss advice. Numeric confidence range 35–85.',
+  '',
+  '## overall_bias — editorial protocol (NOT a price forecast)',
+  '',
+  'overall_bias is a pre-open editorial label over five named inputs. It is NOT investment advice, NOT a target, and NOT a recommendation to trade.',
+  'For this product, bias_horizon MUST always be the string "open" (tilt for the opening / first prints only — not the full session unless explicitly stated elsewhere).',
+  '',
+  'Rubric factors (assign each factor tilt: positive | negative | neutral in bias_rationale):',
+  '  (1) news_tone — same-day market-moving stories: compare negative vs positive tone in <news> you rely on;',
+  '  (2) global_cues — US close, SGX Nifty if present, Asian direction from <global_cues> names/directions;',
+  '  (3) fii_dii — net flow direction and magnitude vs recent context from <fii_dii> (use sign and rough scale; do not invent numbers not in input);',
+  '  (4) vix — India VIX level and direction vs prior snapshot from <india_vix> (if null, set vix tilt neutral and do not invent VIX);',
+  '  (5) calendar — high-impact events pending today from <economic_calendar>.',
+  '',
+  'Label selection (same inputs → same label; default to Neutral when conflicted or weak):',
+  '  - Neutral: factors conflict, or fewer than 3 of 5 share the same directional lean, or data is too thin to lean.',
+  '  - Bullish or Bearish: at least 3 of 5 factor tilts lean the same way (positive for Bullish, negative for Bearish).',
+  '  - Strongly Bullish or Strongly Bearish: at least 4 of 5 align the same way AND magnitudes in cues/flows/VIX feel meaningful (not marginal noise).',
+  '',
+  'Set bias_rationale.factors_aligned to the count of factors that lean WITH the chosen directional side (0 if Neutral).',
+  'If overall_bias is Neutral, all factor tilts may be mixed; set factors_aligned to 0 and explain in one_line.',
+  '',
+  'bias_confidence (low | medium | high) — confidence in the LABEL, not in prices:',
+  '  - high: 4–5 aligned with meaningful magnitude, or unanimous lean with strong cues;',
+  '  - medium: exactly 3 aligned, or 4+ but magnitudes are small/ambiguous;',
+  '  - low: borderline counts, conflicting secondary signals, or thin data.',
+  '',
+  'bias_rationale.one_line must justify overall_bias in plain English and name the dominant inputs.',
+].join('\n');
 
 function loadEnvFromFile(): void {
   const envPath = path.join(process.cwd(), '.env');
@@ -113,11 +179,62 @@ type AnalysisInput = {
   news: unknown[];
   globalCues: unknown[];
   fiiDii: unknown;
+  indiaVix: unknown;
   calendar: unknown[];
   results: unknown[];
   yesterdayReview: unknown;
   verifiedResults: unknown;
 };
+
+/** Overwrites `analysis.india_vix` from pipeline (`raw-market.json`) when present. */
+function applyPipelineIndiaVix(
+  analysis: { india_vix?: IndiaVixSnapshot | null },
+  market: Record<string, unknown>
+): void {
+  if (!Object.prototype.hasOwnProperty.call(market, 'india_vix')) return;
+  const raw = market.india_vix;
+  if (raw === null) {
+    analysis.india_vix = null;
+    return;
+  }
+  const parsed = IndiaVixSnapshotSchema.safeParse(raw);
+  analysis.india_vix = parsed.success ? parsed.data : undefined;
+}
+
+/**
+ * The LLM sometimes writes "Verified results" in headline/source, which reads as if
+ * it came from `verified_results` JSON — it did not. Replace that mislabel so the
+ * page does not imply pipeline-verified figures.
+ */
+function sanitizeMisleadingVerifiedPhrasing(analysis: {
+  headline_call: string;
+  summary: string;
+  key_drivers: Array<{ headline: string; why_it_matters: string; source: string }>;
+}): number {
+  let changes = 0;
+  const badPhrase = /\bverified\s+results\b/gi;
+  const repl = 'News reports';
+
+  const apply = (before: string): string => {
+    const after = before.replace(badPhrase, repl);
+    if (after !== before) changes++;
+    return after;
+  };
+
+  analysis.headline_call = apply(analysis.headline_call);
+  analysis.summary = apply(analysis.summary);
+
+  const badSource = /^\s*verified\s*results?\s*$/i;
+  for (const d of analysis.key_drivers) {
+    d.headline = apply(d.headline);
+    d.why_it_matters = apply(d.why_it_matters);
+    if (badSource.test(d.source) || /^verified\s+/i.test(d.source.trim())) {
+      d.source = 'News flow';
+      changes++;
+    }
+  }
+  return changes;
+}
 
 function hasDeclaredMetrics(r: StockResult): boolean {
   if (r.result_declared !== true) return false;
@@ -154,7 +271,7 @@ function verifiedResultsSnapshot(results: StockResult[]): Record<string, unknown
     .map((r) => ({ symbol: r.symbol, company: r.company, timing: r.timing }));
   return {
     note:
-      'Quantitative earnings (EPS, PAT, YoY %, revenue) may appear ONLY for symbols in declared_with_metrics. For pending_scheduled, say results awaited/scheduled only — no outcomes. You may paraphrase <news> headlines without adding numbers not in the headline text.',
+      'Quantitative earnings (EPS, PAT, YoY %, revenue) may appear ONLY for symbols in declared_with_metrics. For pending_scheduled, say results awaited/scheduled only — no outcomes. You may paraphrase <news> headlines without adding numbers not in the headline text. Do not call results "declared" or "announced" unless that wording appears in the cited news item for that company or the symbol is in declared_with_metrics; otherwise use "reports mention" / "headlines reference".',
     declared_with_metrics: declared,
     pending_scheduled: pending,
   };
@@ -163,7 +280,18 @@ function verifiedResultsSnapshot(results: StockResult[]): Record<string, unknown
 function buildUserPrompt(input: AnalysisInput): string {
   const shape = {
     date: input.date,
-    overall_bias: 'Bullish|Bearish|Neutral',
+    overall_bias: 'Strongly Bullish|Bullish|Neutral|Bearish|Strongly Bearish',
+    bias_horizon: 'open|morning_session|full_day',
+    bias_confidence: 'low|medium|high',
+    bias_rationale: {
+      news_tone: 'positive|negative|neutral',
+      global_cues: 'positive|negative|neutral',
+      fii_dii: 'positive|negative|neutral',
+      vix: 'positive|negative|neutral',
+      calendar: 'positive|negative|neutral',
+      factors_aligned: 'integer 0..5',
+      one_line: 'string max 500 chars',
+    },
     confidence: '0..100',
     headline_call: 'string max 200 chars',
     summary: 'string',
@@ -216,6 +344,7 @@ Global cues and FII/DII numbers are snapshots from YOUR data pipeline fetch time
 Use these inputs:
 <news>${JSON.stringify(input.news)}</news>
 <global_cues>${JSON.stringify(input.globalCues)}</global_cues>
+<india_vix>${JSON.stringify(input.indiaVix)}</india_vix>
 <fii_dii>${JSON.stringify(input.fiiDii)}</fii_dii>
 <economic_calendar>${JSON.stringify(input.calendar)}</economic_calendar>
 <today_results>${JSON.stringify(input.results)}</today_results>
@@ -224,26 +353,43 @@ Use these inputs:
 
 Rules:
 - Return valid JSON only, matching schema exactly.
+- bias_horizon MUST be "open" for this product (pre-open / opening bias only).
+- Apply the overall_bias rubric in the system prompt: set bias_rationale tilts and factors_aligned consistently with overall_bias and bias_confidence.
 - Keep global_cues, fii_dii, economic_calendar, today_results unchanged from input.
 - HARD GROUNDING: For Nifty/Sensex/Dow/Nasdaq/Brent/Gold/USD-INR/US 10Y/Nikkei etc., quote percentages and levels ONLY from <global_cues> (match by name). Do not substitute other figures from memory or news.
+- India VIX: data in <india_vix> is factual from the snapshot (or null if unavailable). Reference it in key_drivers or risk_factors when relevant. Never invent VIX levels or percentages.
 - HARD GROUNDING: For company results (EPS, PAT, YoY revenue/profit margin commentary), you MAY use explicit numbers ONLY if:
   (a) the numeric field appears for that symbol inside verified_results.declared_with_metrics, OR
   (b) the SAME number appears verbatim in <news> title/description — quote as "reported headline" briefly, do not recalculate.
 - If a stock is only in verified_results.pending_scheduled (or not declared in today_results), you MUST NOT claim actual results or YoY/PAT outcomes. Say only "scheduled/awaited" etc.
 - If declared_with_metrics is empty, do not put company-specific quantitative earnings (no "+X% PAT YoY" etc.) in headline_call, summary, or key_drivers; use themes, flows, and global cues only.
+- DECLARED / ANNOUNCED LANGUAGE: Do not use "declared", "declared results", "announced results", "results are out", or "published results" in headline_call, summary, key_drivers (headline or why_it_matters), or sector_impact unless (1) that wording appears in the specific <news> item for that company/symbol, OR (2) that symbol is listed in verified_results.declared_with_metrics with a metric you cite. Otherwise use hedged phrasing ("headlines reference", "reports mention", "coverage of", "results awaited").
+- NEVER use the phrase "Verified results" or "verified pipeline" in headline_call, summary, key_drivers headline, or why_it_matters — that phrase is not a data product label; it misleads readers. Use a real news publisher name or hedged wording above.
+- key_drivers[].source MUST be exactly one of: (1) the "source" field from a <news> item you rely on for that driver, OR (2) one of these literals: "Global cues", "FII/DII", "Economic calendar", "India VIX", "NSE results calendar". Do not invent labels like "Verified Results".
 - Cover all 10 sectors in sector_impact (use Low if no catalyst).
 - In key_drivers and sector_impact: use impact ONLY as magnitude size (High|Moderate|Low). Use direction ONLY for bullish/bearish tone (Positive|Negative|Mixed). Never put Positive, Negative, or Mixed in impact.
 - No buy/sell/target/stop-loss advice.
 - Confidence range 35-85.
+- ENTITY ATTRIBUTION: A number (profit, revenue, EPS, YoY %) from one company's headline MUST NOT appear in any output field associated with a different company. Example: if you see "₹1415 crore" for Tata Power in a headline, do not mention that figure under PFC, NTPC, or any other entity.
+- IF IN DOUBT, OMIT: It is always better to return less information than to return wrong information. Omit a fact rather than invent or misattribute it.
 
 Output schema:
 ${JSON.stringify(shape)}
 `;
 }
 
-function compactNewsForPrompt(raw: unknown[], limit = 20): Array<Record<string, string>> {
-  return raw
-    .slice(0, limit)
+// ANALYZE_NEWS_COMPACT_LIMIT: unset or 0 = send all items (higher tokens/cost).
+// Set to a positive integer (e.g. 60) to cap the list sent to the LLM.
+function compactNewsForPrompt(raw: unknown[], limit?: number): Array<Record<string, string>> {
+  const envLimit = Number(process.env.ANALYZE_NEWS_COMPACT_LIMIT ?? 0) || 0;
+  const effective = limit ?? (envLimit > 0 ? envLimit : raw.length);
+  const sorted = [...raw].sort((a, b) => {
+    const ta = new Date(String((a as Record<string, unknown>).pubDate ?? '')).getTime();
+    const tb = new Date(String((b as Record<string, unknown>).pubDate ?? '')).getTime();
+    return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
+  });
+  return sorted
+    .slice(0, effective)
     .map((x) => x as Record<string, unknown>)
     .map((n) => ({
       title: String(n.title ?? '').trim().slice(0, 180),
@@ -568,6 +714,7 @@ function buildEmergencyAnalysis(input: {
   calendar: CalendarEvent[];
   todayResults: StockResult[];
   yesterdayReview: unknown;
+  rawMarketRecord: Record<string, unknown>;
 }): ReturnType<typeof AnalysisSchema.parse> {
   const sectors = [
     'Banking', 'Financial Services', 'IT', 'Pharmaceuticals', 'FMCG',
@@ -581,6 +728,17 @@ function buildEmergencyAnalysis(input: {
   const analysis = {
     date: input.date,
     overall_bias: 'Neutral' as const,
+    bias_horizon: 'open' as const,
+    bias_confidence: 'low' as const,
+    bias_rationale: {
+      news_tone: 'neutral' as const,
+      global_cues: 'neutral' as const,
+      fii_dii: 'neutral' as const,
+      vix: 'neutral' as const,
+      calendar: 'neutral' as const,
+      factors_aligned: 0,
+      one_line: 'Emergency fallback — model output invalid; rubric not applied. Treat opening bias as unclassified.',
+    },
     confidence: 45,
     headline_call: 'Mixed cues; follow data-driven risk management at open.',
     summary: 'Automated fallback analysis generated because model output was unavailable/invalid. Use global cues and flows for opening bias and wait for confirmation after first 30 minutes.',
@@ -617,6 +775,7 @@ function buildEmergencyAnalysis(input: {
     retail_policy_impact: [],
     accuracy_review: input.yesterdayReview ?? undefined,
   };
+  applyPipelineIndiaVix(analysis, input.rawMarketRecord);
   return AnalysisSchema.parse(analysis);
 }
 
@@ -639,14 +798,15 @@ async function main() {
   console.log(`  Model: ${model}`);
 
   const news = loadJson<unknown[]>('raw-news.json');
-  const market = loadJson<{ global_cues: unknown[]; fii_dii: unknown }>('raw-market.json');
+  const market = loadJson<{ global_cues: unknown[]; fii_dii: unknown; india_vix?: unknown }>('raw-market.json');
+  const marketRecord = market as Record<string, unknown>;
   const calendar = maybeLoadJson<unknown[]>('raw-calendar.json') ?? [];
   const results = maybeLoadJson<unknown[]>('raw-results.json') ?? [];
   const normalizedCalendar = normalizeCalendar(calendar);
   const normalizedResults = normalizeResults(results);
   const yesterdayReview = maybeLoadJson<unknown>('yesterday-review.json');
 
-  const compactNews = compactNewsForPrompt(news, 20);
+  const compactNews = compactNewsForPrompt(news);
   const userPrompt = buildUserPrompt({
     date,
     dayName,
@@ -654,6 +814,7 @@ async function main() {
     news: compactNews,
     globalCues: market.global_cues,
     fiiDii: market.fii_dii,
+    indiaVix: market.india_vix ?? null,
     calendar: normalizedCalendar,
     results: normalizedResults,
     yesterdayReview,
@@ -680,6 +841,9 @@ async function main() {
   for (let attempt = 1; attempt <= 2 && lastResponse; attempt++) {
     try {
       const parsed = parseJsonObject(lastResponse);
+      if (typeof parsed === 'object' && parsed != null && !Array.isArray(parsed)) {
+        normalizeBiasFieldsForAnalysisParse(parsed as Record<string, unknown>);
+      }
       normalizeAnalysisImpactDirectionEnums(parsed);
       const validated = AnalysisSchema.safeParse(parsed);
       if (validated.success) {
@@ -713,7 +877,11 @@ async function main() {
     fs.writeFileSync(debugPath, lastResponse);
     const existingPath = path.join(process.cwd(), 'src', 'data', 'analyses', `${date}.json`);
     if (fs.existsSync(existingPath)) {
-      const existingParsed = AnalysisSchema.safeParse(JSON.parse(fs.readFileSync(existingPath, 'utf-8')));
+      const rawExisting = JSON.parse(fs.readFileSync(existingPath, 'utf-8')) as unknown;
+      if (typeof rawExisting === 'object' && rawExisting !== null && !Array.isArray(rawExisting)) {
+        normalizeBiasFieldsForAnalysisParse(rawExisting as Record<string, unknown>);
+      }
+      const existingParsed = AnalysisSchema.safeParse(rawExisting);
       if (existingParsed.success) {
         console.warn(`  ⚠ Model output invalid after retries (${lastReason}). Reusing existing analysis file for ${date}.`);
         finalData = existingParsed.data;
@@ -728,6 +896,7 @@ async function main() {
         calendar: normalizedCalendar,
         todayResults: normalizedResults,
         yesterdayReview,
+        rawMarketRecord: marketRecord,
       });
     }
   }
@@ -740,6 +909,14 @@ async function main() {
   finalData.today_results = normalizedResults;
   finalData.policy_notes = [];
   finalData.retail_policy_impact = [];
+  applyPipelineIndiaVix(finalData, marketRecord);
+
+  const stripped = sanitizeMisleadingVerifiedPhrasing(finalData);
+  if (stripped > 0) {
+    console.warn(`  ⚠ Sanitized misleading "Verified results" phrasing in ${stripped} place(s) — LLM mislabeled narrative as pipeline data.`);
+  }
+
+  finalData.bias_horizon = 'open';
 
   const outPath = path.join(process.cwd(), 'src', 'data', 'analyses', `${date}.json`);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });

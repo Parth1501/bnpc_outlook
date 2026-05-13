@@ -1,0 +1,32 @@
+---
+import type { IndiaVixSnapshot } from '../lib/types';
+
+interface Props {
+  snapshot: IndiaVixSnapshot | null | undefined;
+}
+const { snapshot } = Astro.props;
+---
+
+{
+  snapshot && (
+    <div
+      class="card px-3 py-3 mb-3 border"
+      style="border-color: var(--accent); background: color-mix(in srgb, var(--accent-bg) 50%, transparent);"
+    >
+      <div class="label mb-1">India VIX</div>
+      <div class="flex flex-wrap items-baseline gap-2">
+        <span class="mono text-lg font-bold" style="color: var(--text-primary);">{snapshot.value.toFixed(2)}</span>
+        <span class="mono text-xs font-semibold" style={`color: ${snapshot.change_percent >= 0 ? 'var(--bearish)' : 'var(--bullish)'};`}>
+          {snapshot.change >= 0 ? '+' : ''}{snapshot.change.toFixed(2)} ({snapshot.change_percent >= 0 ? '+' : ''}
+          {snapshot.change_percent.toFixed(2)}%)
+        </span>
+      </div>
+      <div class="text-[11px] leading-snug mt-2" style="color: var(--text-muted);">
+        Prev close {snapshot.previous_close.toFixed(2)} · Snapshot {snapshot.as_of}
+      </div>
+      <p class="text-[11px] leading-snug mt-2 mb-0" style="color: var(--text-secondary);">
+        India VIX measures expected 30-day Nifty volatility. Higher = more fear. Typical range: 10–20.
+      </p>
+    </div>
+  )
+}

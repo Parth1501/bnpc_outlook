@@ -286,6 +286,29 @@ function isDeclaredResultHeadline(news: NewsItem): boolean {
   return /(q[1-4].{0,20}results|results|earnings|net profit|revenue|ebitda)/.test(text);
 }
 
+/**
+ * First-word-only company match is unsafe: e.g. "Hindustan Construction" (HCC) shares
+ * first token "HINDUSTAN" with "Hindustan Aeronautics" (HAL) headlines — would duplicate HAL metrics onto HCC.
+ * For ambiguous first tokens, require the first TWO words of the company name to appear in the text.
+ */
+const AMBIGUOUS_COMPANY_FIRST_WORD = new Set([
+  'HINDUSTAN', 'INDIAN', 'STATE', 'GLOBAL', 'NATIONAL', 'UNION', 'CENTRAL',
+  'BANK', 'THE', 'UNITED', 'STANDARD', 'ROYAL', 'INTERNATIONAL',
+]);
+
+function companyNameAppearsInHeadline(company: string, textUpper: string): boolean {
+  const parts = company.toUpperCase().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return false;
+  const w0 = parts[0];
+  if (AMBIGUOUS_COMPANY_FIRST_WORD.has(w0)) {
+    if (parts.length >= 2) {
+      return textUpper.includes(`${w0} ${parts[1]}`);
+    }
+    return false;
+  }
+  return textUpper.includes(w0);
+}
+
 function buildNewsMetricsBySymbol(news: NewsItem[] | null): Map<string, NewsMetrics> {
   const map = new Map<string, NewsMetrics>();
   if (!Array.isArray(news)) return map;
@@ -323,8 +346,7 @@ function buildNewsMetricsBySymbolStrict(news: NewsItem[], symbols: string[], com
     const text = `${item.title ?? ''} ${item.description ?? ''}`.toUpperCase();
     for (const symbol of symbols) {
       const company = (companyBySymbol.get(symbol) ?? '').toUpperCase();
-      const companyToken = company.split(' ')[0] ?? '';
-      if (!text.includes(symbol) && (!companyToken || !text.includes(companyToken))) continue;
+      if (!text.includes(symbol) && !companyNameAppearsInHeadline(company, text)) continue;
       const parsed = extractMetricsFromText(`${item.title ?? ''} ${item.description ?? ''}`);
       const prev = out.get(symbol) ?? {};
       out.set(symbol, {
@@ -593,7 +615,14 @@ async function main() {
     const estimateRevenue = isFiniteNumber(finnhub?.revenueEstimate) ? finnhub.revenueEstimate : null;
     const actualRevenue = isFiniteNumber(finnhub?.revenueActual) ? finnhub.revenueActual : null;
     const fromNews = llmNewsMetrics.get(symbol) ?? regexNewsMetrics.get(symbol) ?? buildNewsMetricsBySymbol(mergedNews).get(symbol);
-    const hasAnyActual = actualEps !== null || actualRevenue !== null || Boolean(fromNews?.result_declared);
+    const newsHasFigures =
+      fromNews != null &&
+      (fromNews.net_profit_actual != null ||
+        fromNews.net_profit_yoy_pct != null ||
+        fromNews.revenue_yoy_pct != null ||
+        fromNews.ebitda_actual != null ||
+        fromNews.ebitda_yoy_pct != null);
+    const hasAnyActual = actualEps !== null || actualRevenue !== null || newsHasFigures;
 
     return {
       symbol,

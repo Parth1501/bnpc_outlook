@@ -1,6 +1,30 @@
 import { z } from 'zod';
 
-export const BiasSchema = z.enum(['Bullish', 'Bearish', 'Neutral']);
+/** Pre-open directional label; Strongly* when ≥4 of 5 rubric factors align with meaningful magnitude. */
+export const BiasSchema = z.enum([
+  'Strongly Bullish',
+  'Bullish',
+  'Neutral',
+  'Bearish',
+  'Strongly Bearish',
+]);
+
+export const BiasHorizonSchema = z.enum(['open', 'morning_session', 'full_day']);
+
+export const BiasLabelConfidenceSchema = z.enum(['low', 'medium', 'high']);
+
+/** Per-factor tilt for the overall_bias rubric (not price forecasts). */
+export const FactorTiltSchema = z.enum(['positive', 'negative', 'neutral']);
+
+export const BiasRationaleSchema = z.object({
+  news_tone: FactorTiltSchema,
+  global_cues: FactorTiltSchema,
+  fii_dii: FactorTiltSchema,
+  vix: FactorTiltSchema,
+  calendar: FactorTiltSchema,
+  factors_aligned: z.number().int().min(0).max(5),
+  one_line: z.string().max(500),
+});
 export const ImpactSchema = z.enum(['High', 'Moderate', 'Low']);
 export const DirectionSchema = z.enum(['Positive', 'Negative', 'Mixed']);
 export const CueDirectionSchema = z.enum(['up', 'down', 'flat']);
@@ -111,6 +135,8 @@ export const RetailPolicyImpactSchema = z.object({
   source_url: z.string(),
 });
 
+export const AccuracyVerdictSchema = z.enum(['hit', 'soft_miss', 'hard_miss']);
+
 export const AccuracyReviewSchema = z.object({
   yesterday_prediction: BiasSchema,
   yesterday_headline: z.string(),
@@ -118,11 +144,32 @@ export const AccuracyReviewSchema = z.object({
   actual_direction: CueDirectionSchema,
   nifty_close: z.number(),
   correct: z.boolean(),
+  /** How many rubric factors aligned the way overall_bias leaned (from yesterday's file, if present). */
+  factors_aligned_at_call: z.number().int().min(0).max(5).optional(),
+  /** bias_confidence from yesterday's analysis when verify ran. */
+  bias_confidence_at_call: BiasLabelConfidenceSchema.optional(),
+  /** hit = directionally right; soft_miss = wrong but low-confidence call; hard_miss = wrong with medium/high confidence. */
+  verdict: AccuracyVerdictSchema.optional(),
+});
+
+/** India VIX snapshot from market fetch; injected into analyses from pipeline truth. */
+export const IndiaVixSnapshotSchema = z.object({
+  value: z.number(),
+  previous_close: z.number(),
+  change: z.number(),
+  change_percent: z.number(),
+  as_of: z.string(),
 });
 
 export const AnalysisSchema = z.object({
   date: z.string(),
   overall_bias: BiasSchema,
+  /** What time horizon overall_bias describes (product standard: pre-open / opening bias). */
+  bias_horizon: BiasHorizonSchema.default('open'),
+  /** How tightly rubric factors aligned when choosing the label. */
+  bias_confidence: BiasLabelConfidenceSchema.default('medium'),
+  /** Per-factor tilts and alignment count — must justify overall_bias. */
+  bias_rationale: BiasRationaleSchema,
   confidence: z.number().min(0).max(100),
   headline_call: z.string().max(200),
   summary: z.string(),
@@ -141,9 +188,15 @@ export const AnalysisSchema = z.object({
   policy_notes: z.array(PolicyNoteSchema).default([]),
   retail_policy_impact: z.array(RetailPolicyImpactSchema).default([]),
   accuracy_review: AccuracyReviewSchema.optional(),
+  india_vix: IndiaVixSnapshotSchema.nullish(),
 });
 
 export type Bias = z.infer<typeof BiasSchema>;
+export type BiasHorizon = z.infer<typeof BiasHorizonSchema>;
+export type BiasLabelConfidence = z.infer<typeof BiasLabelConfidenceSchema>;
+export type FactorTilt = z.infer<typeof FactorTiltSchema>;
+export type BiasRationale = z.infer<typeof BiasRationaleSchema>;
+export type AccuracyVerdict = z.infer<typeof AccuracyVerdictSchema>;
 export type Impact = z.infer<typeof ImpactSchema>;
 export type Direction = z.infer<typeof DirectionSchema>;
 export type CueDirection = z.infer<typeof CueDirectionSchema>;
@@ -161,4 +214,5 @@ export type PolicyCategory = z.infer<typeof PolicyCategorySchema>;
 export type PolicyNote = z.infer<typeof PolicyNoteSchema>;
 export type RetailPolicyImpact = z.infer<typeof RetailPolicyImpactSchema>;
 export type AccuracyReview = z.infer<typeof AccuracyReviewSchema>;
+export type IndiaVixSnapshot = z.infer<typeof IndiaVixSnapshotSchema>;
 export type DailyAnalysis = z.infer<typeof AnalysisSchema>;

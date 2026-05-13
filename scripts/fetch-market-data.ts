@@ -47,6 +47,15 @@ interface CalendarEventRaw {
   previous?: string | null;
 }
 
+/** India VIX quote from NSE allIndices — written to raw-market.json. */
+export interface IndiaVixMarketRaw {
+  value: number;
+  previous_close: number;
+  change: number;
+  change_percent: number;
+  as_of: string;
+}
+
 function loadEnvFromFile(): void {
   const envPath = path.join(process.cwd(), '.env');
   if (!fs.existsSync(envPath)) return;
@@ -182,6 +191,86 @@ async function fetchGiftNifty(): Promise<GlobalCueRaw | null> {
     // Moneycontrol returns HTML; parse a known JSON endpoint instead
     return null; // fallback handled below
   } catch {
+    return null;
+  }
+}
+
+function istTimestampISO(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now);
+  const g = (t: Intl.DateTimeFormatPart['type']) => parts.find((p) => p.type === t)?.value ?? '00';
+  return `${g('year')}-${g('month')}-${g('day')}T${g('hour')}:${g('minute')}:${g('second')}+05:30`;
+}
+
+async function fetchIndiaVixFromNse(): Promise<IndiaVixMarketRaw | null> {
+  try {
+    const cookie = await warmNseCookies();
+    const headers: Record<string, string> = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Referer': 'https://www.nseindia.com/',
+    };
+    if (cookie) headers.Cookie = cookie;
+
+    const res = await fetch('https://www.nseindia.com/api/allIndices', {
+      headers,
+      signal: AbortSignal.timeout(18_000),
+    });
+
+    if (!res.ok) {
+      console.warn(`  ⚠ India VIX: NSE allIndices HTTP ${res.status}`);
+      return null;
+    }
+
+    const data = (await res.json()) as { data?: Array<Record<string, unknown>> };
+    const rows = Array.isArray(data.data) ? data.data : [];
+    const row = rows.find((r) => {
+      const name = String(r.index ?? r.indexName ?? r.name ?? '').trim().toLowerCase();
+      return name === 'india vix';
+    });
+
+    if (!row) {
+      console.warn('  ⚠ India VIX: "India VIX" row missing in allIndices response');
+      return null;
+    }
+
+    const last = parseNum(row.last ?? row.lastPrice ?? row.lastTradedPrice);
+    const prev = parseNum(row.previousClose ?? row.previousDay ?? row.prevClose ?? row.indexPreviousClose);
+
+    let change = parseNum(row.variation ?? row.change);
+    if (!Number.isFinite(change)) change = last - prev;
+    change = Number(change.toFixed(4));
+
+    let changePct = parseNum(row.percChange ?? row.percentChange ?? row.pChange);
+    if (!Number.isFinite(changePct) && prev !== 0) {
+      changePct = Math.round(((last - prev) / prev) * 10000) / 100;
+    }
+    if (!Number.isFinite(changePct)) changePct = 0;
+    changePct = Math.round(changePct * 100) / 100;
+
+    if (!(last > 0) || !(prev > 0)) {
+      console.warn('  ⚠ India VIX: invalid last/previous_close from NSE');
+      return null;
+    }
+
+    return {
+      value: Math.round(last * 100) / 100,
+      previous_close: Math.round(prev * 100) / 100,
+      change,
+      change_percent: changePct,
+      as_of: istTimestampISO(),
+    };
+  } catch (e) {
+    console.warn('  ⚠ India VIX fetch failed:', (e as Error).message);
     return null;
   }
 }
@@ -483,7 +572,12 @@ async function main() {
     console.log(`  FII/DII: ok (${fiiDii.fii_net >= 0 ? '+' : ''}${fiiDii.fii_net} / ${fiiDii.dii_net >= 0 ? '+' : ''}${fiiDii.dii_net})`);
   }
 
-  const output = { global_cues: globalCues, fii_dii: fiiDii };
+  let indiaVix: IndiaVixMarketRaw | null = await fetchIndiaVixFromNse();
+  if (indiaVix) {
+    console.log(`  India VIX: ${indiaVix.value} (${indiaVix.change_percent >= 0 ? '+' : ''}${indiaVix.change_percent}%)`);
+  }
+
+  const output = { global_cues: globalCues, fii_dii: fiiDii, india_vix: indiaVix };
 
   const outPath = path.join(process.cwd(), 'tmp', 'raw-market.json');
   fs.mkdirSync(path.dirname(outPath), { recursive: true });

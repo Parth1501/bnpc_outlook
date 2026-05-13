@@ -210,7 +210,11 @@ echo "=== $(date -Iseconds) DONE ==="
 
 ---
 
-## 8) Add cron job (03:00 IST)
+## 8) Add cron job (07:30 IST, weekdays only — not Sat/Sun)
+
+Indian cash market is closed **Saturday–Sunday**. Cron below runs **every weekday morning** (`1–5` = Monday–Friday in the timezone cron uses).
+
+Setting **`CRON_TZ=Asia/Kolkata`** makes “weekday” and “07:30” match IST, avoiding UTC-vs-IST weekday edge cases.
 
 ```bash
 crontab -e
@@ -219,10 +223,11 @@ crontab -e
 Add:
 
 ```cron
-30 21 * * * /home/ubuntu/stock-outlook/scripts/run-daily.sh
+CRON_TZ=Asia/Kolkata
+30 7 * * 1-5 /home/ubuntu/stock-outlook/scripts/run-daily.sh
 ```
 
-(`21:30 UTC` = `03:00 IST`)
+(`30 7 * * 1-5` = minute 30, hour 7, Monday–Friday, in `Asia/Kolkata`.)
 
 ---
 

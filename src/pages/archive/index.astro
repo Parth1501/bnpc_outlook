@@ -4,6 +4,7 @@ import Header from '../../components/Header.astro';
 import ImpactBadge from '../../components/ImpactBadge.astro';
 import { getAllAnalyses } from '../../lib/data';
 import { fmtDateShort } from '../../lib/format';
+import { getConvictionBucket } from '../../lib/conviction';
 
 const analyses = (await getAllAnalyses()).slice(0, 90);
 ---
@@ -31,13 +32,15 @@ const analyses = (await getAllAnalyses()).slice(0, 90);
             <tr style="background: var(--bg-elevated); border-bottom: 1px solid var(--border);">
               <th class="px-4 py-3 text-left label" style="color: var(--text-muted);">Date</th>
               <th class="px-4 py-3 text-left label" style="color: var(--text-muted);">Bias</th>
-              <th class="px-4 py-3 text-left label hidden sm:table-cell" style="color: var(--text-muted);">Conf.</th>
+              <th class="px-4 py-3 text-left label hidden sm:table-cell" style="color: var(--text-muted);">Conviction</th>
               <th class="px-4 py-3 text-left label" style="color: var(--text-muted);">Headline</th>
               <th class="px-4 py-3 text-left label hidden md:table-cell" style="color: var(--text-muted);">Accuracy</th>
             </tr>
           </thead>
           <tbody>
-            {analyses.map((a, i) => (
+            {analyses.map((a, i) => {
+              const conv = getConvictionBucket(a.confidence);
+              return (
               <tr
                 class="transition-colors"
                 style={`border-bottom: ${i < analyses.length - 1 ? '1px solid var(--border)' : 'none'};`}
@@ -54,8 +57,11 @@ const analyses = (await getAllAnalyses()).slice(0, 90);
                 <td class="px-4 py-3">
                   <ImpactBadge type="bias" value={a.overall_bias} />
                 </td>
-                <td class="px-4 py-3 mono text-xs hidden sm:table-cell" style="color: var(--text-muted);">
-                  {a.confidence}%
+                <td class="px-4 py-3 mono text-[11px] hidden sm:table-cell" style="color: var(--text-muted);">
+                  <span class="font-semibold" style={`color: ${conv.color};`}>
+                    {conv.label}
+                  </span>
+                  <span class="opacity-80"> · {a.confidence}/100</span>
                 </td>
                 <td class="px-4 py-3 max-w-xs">
                   <a
@@ -68,18 +74,22 @@ const analyses = (await getAllAnalyses()).slice(0, 90);
                 </td>
                 <td class="px-4 py-3 hidden md:table-cell">
                   {a.accuracy_review ? (
-                    <span
-                      class="mono text-xs font-bold"
-                      style={a.accuracy_review.correct ? 'color: var(--bullish);' : 'color: var(--bearish);'}
-                    >
-                      {a.accuracy_review.correct ? '✓ Hit' : '✗ Miss'}
+                    <span class="mono text-xs font-bold">
+                      {a.accuracy_review.correct ? (
+                        <span style="color: var(--bullish);">✓ Hit</span>
+                      ) : a.accuracy_review.verdict === 'soft_miss' ? (
+                        <span style="color: var(--moderate-impact);">◐ Soft</span>
+                      ) : (
+                        <span style="color: var(--bearish);">✗ Miss</span>
+                      )}
                     </span>
                   ) : (
                     <span class="mono text-xs" style="color: var(--text-muted);">Pending</span>
                   )}
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

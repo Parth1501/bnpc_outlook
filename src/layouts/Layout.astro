@@ -209,17 +209,18 @@ const canonicalURL = Astro.url.href;
           loading="lazy"
         />
 
-        <div class="flex-1 min-w-0">
-          <p class="text-xs leading-relaxed" style="color: var(--text-muted);">
-            <span class="font-semibold" style="color: var(--text-secondary);">Disclaimer:</span>
-            This report is prepared by BNPC Private Limited for informational purposes only and does not constitute investment advice, solicitation, or an offer to buy or sell any financial instrument.
-            Views and forecasts are subject to change without notice. Past performance is not indicative of future results.
-            <strong style="color: var(--text-secondary);">Markets carry risk. This is not investment advice.</strong>
-            Investors should conduct independent due diligence and consult a SEBI-registered adviser before making investment decisions.
-            BNPC, its directors, and affiliates may hold positions in instruments mentioned herein.
+        <div class="flex-1 min-w-0 space-y-3">
+          <div class="disclaimer text-[11px] sm:text-xs leading-relaxed rounded-lg border px-3 py-2.5" style="border-color: var(--border); color: var(--text-muted); background: color-mix(in srgb, var(--bg-elevated) 65%, transparent);">
+            <strong style="color: var(--text-secondary);">Disclaimer:</strong>
+            Overall bias reflects the directional tilt of inputs available before market open. It is an editorial summary of news and indicators, not investment advice, not a price target, and not a recommendation to buy or sell. BNPC is not a SEBI-registered research analyst.
+            This page may include AI-generated commentary for educational and informational purposes only. Markets involve risk; past performance and any views here do not guarantee future results. Consult a SEBI-registered professional before making investment decisions.
+          </div>
+          <p class="text-[11px] leading-relaxed" style="color: var(--text-muted);">
+            Prepared by <span style="color: var(--text-secondary);" class="font-medium">BNPC Private Limited</span>.
+            BNPC and its directors/affiliates may hold positions in instruments mentioned herein.
           </p>
-          <p class="text-xs mt-2" style="color: var(--text-muted);">
-            © 2026 BNPC Private Limited. All rights reserved. &nbsp;·&nbsp; Analysis generated with AI assistance. For informational purposes only.
+          <p class="text-[11px] mt-2" style="color: var(--text-muted);">
+            © 2026 BNPC Private Limited. All rights reserved.
           </p>
         </div>
       </div>
