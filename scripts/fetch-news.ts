@@ -153,6 +153,9 @@ function toMarketauxDate(valueIso: string): string {
   return valueIso.slice(0, 10);
 }
 
+/** GNews `country` query value — sent exactly as required by the API (do not lowercase). */
+const GNEWS_COUNTRY = 'In';
+
 // ── GNews fetch ───────────────────────────────────────────────────────────────
 async function fetchGnews(apiKey: string): Promise<NewsItem[]> {
   const maxPerPage = Math.min(100, Math.max(1, Number(process.env.GNEWS_MAX ?? 100) || 100));
@@ -166,14 +169,15 @@ async function fetchGnews(apiKey: string): Promise<NewsItem[]> {
 
   for (let page = 1; page <= maxPages; page++) {
     const url = new URL('https://gnews.io/api/v4/top-headlines');
-    url.searchParams.set('apikey',   apiKey);
+    // Query order matches GNews examples (category, lang, country, max, apikey, from, to, page).
     url.searchParams.set('category', 'business');
-    url.searchParams.set('lang',     'en');
-    url.searchParams.set('country',  'in');
-    url.searchParams.set('max',      String(maxPerPage));
-    url.searchParams.set('page',     String(page));
-    url.searchParams.set('from',     from);
-    url.searchParams.set('to',       to);
+    url.searchParams.set('lang', 'en');
+    url.searchParams.set('country', GNEWS_COUNTRY);
+    url.searchParams.set('max', String(maxPerPage));
+    url.searchParams.set('apikey', apiKey);
+    url.searchParams.set('from', from);
+    url.searchParams.set('to', to);
+    url.searchParams.set('page', String(page));
 
     console.log(`  GNews page ${page}/${maxPages} → GET ${url.toString().replace(apiKey, '***')}`);
 
