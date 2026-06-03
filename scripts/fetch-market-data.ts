@@ -26,6 +26,8 @@ interface GlobalCueRaw {
   change: number;
   change_pct: number;
   direction: 'up' | 'down' | 'flat';
+  recency?: 'prior_close' | 'overnight';
+  source?: 'live' | 'proxy' | 'market' | 'derived';
 }
 
 interface FiiDiiRaw {
@@ -180,19 +182,100 @@ async function fetchYahooFinance(): Promise<GlobalCueRaw[]> {
   return fetchYahooChartFallback();
 }
 
-// SGX/Gift Nifty: try Moneycontrol API; fall back to placeholder
-async function fetchGiftNifty(): Promise<GlobalCueRaw | null> {
+function directionFromPct(pct: number): GlobalCueRaw['direction'] {
+  return pct > 0.05 ? 'up' : pct < -0.05 ? 'down' : 'flat';
+}
+
+function extractGiftNiftyValue(payload: string): number | null {
+  const candidates = [
+    /gift\s*nifty[^0-9]{0,80}([0-9]{4,6}(?:\.[0-9]+)?)/i,
+    /last(?:Price|_price| traded price)?["':\s]+([0-9]{4,6}(?:\.[0-9]+)?)/i,
+    /ltp["':\s]+([0-9]{4,6}(?:\.[0-9]+)?)/i,
+    /price["':\s]+([0-9]{4,6}(?:\.[0-9]+)?)/i,
+  ];
+  for (const re of candidates) {
+    const m = payload.match(re);
+    const value = m?.[1] ? Number(m[1].replace(/,/g, '')) : NaN;
+    if (Number.isFinite(value) && value > 10000 && value < 40000) return value;
+  }
+  return null;
+}
+
+// Best-effort live GIFT Nifty scrape. If it fails, callers use the transparent proxy below.
+async function fetchGiftNifty(priorNiftyClose: number): Promise<GlobalCueRaw | null> {
+  const endpoints = [
+    'https://www.moneycontrol.com/markets/global-indices/',
+    'https://www.nseix.com/',
+  ];
   try {
-    const res = await fetch(
-      'https://www.moneycontrol.com/mc/widget/basicscreener/masterdata?classic=true&popen=0&pclose=0&pname=Gift+Nifty',
-      { signal: AbortSignal.timeout(8_000) }
-    );
-    if (!res.ok) return null;
-    // Moneycontrol returns HTML; parse a known JSON endpoint instead
-    return null; // fallback handled below
+    for (const endpoint of endpoints) {
+      const res = await fetch(endpoint, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          'Accept': 'text/html,application/json,*/*',
+        },
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (!res.ok) continue;
+      const value = extractGiftNiftyValue(await res.text());
+      if (!value) continue;
+      const change = value - priorNiftyClose;
+      const changePct = priorNiftyClose !== 0 ? (change / priorNiftyClose) * 100 : 0;
+      return {
+        name: 'Gift Nifty',
+        value: Number(value.toFixed(2)),
+        change: Number(change.toFixed(2)),
+        change_pct: Number(changePct.toFixed(2)),
+        direction: directionFromPct(changePct),
+        recency: 'overnight',
+        source: 'live',
+      };
+    }
+    return null;
   } catch {
     return null;
   }
+}
+
+function buildImpliedOpenProxy(cues: GlobalCueRaw[]): GlobalCueRaw | null {
+  const nifty = cues.find((c) => c.name === 'Nifty 50');
+  if (!nifty || !(nifty.value > 0)) return null;
+
+  const byName = new Map(cues.map((c) => [c.name, c]));
+  const weightedInputs = [
+    { cue: byName.get('Dow Jones'), weight: 0.20 },
+    { cue: byName.get('Nasdaq'), weight: 0.30 },
+    { cue: byName.get('Nikkei 225'), weight: 0.25 },
+    { cue: byName.get('USD/INR'), weight: -0.15 },
+    { cue: byName.get('Brent $/bbl'), weight: -0.10 },
+  ].filter((x): x is { cue: GlobalCueRaw; weight: number } => Boolean(x.cue));
+
+  const weightAbs = weightedInputs.reduce((sum, x) => sum + Math.abs(x.weight), 0);
+  if (weightAbs < 0.4) return null;
+
+  const rawPct = weightedInputs.reduce((sum, x) => sum + x.cue.change_pct * x.weight, 0) / weightAbs;
+  const gapPct = Math.max(-1.5, Math.min(1.5, rawPct));
+  const implied = nifty.value * (1 + gapPct / 100);
+  const change = implied - nifty.value;
+
+  return {
+    name: 'Implied open (proxy)',
+    value: Number(implied.toFixed(2)),
+    change: Number(change.toFixed(2)),
+    change_pct: Number(gapPct.toFixed(2)),
+    direction: directionFromPct(gapPct),
+    recency: 'overnight',
+    source: 'proxy',
+  };
+}
+
+function tagCueRecency(cues: GlobalCueRaw[]): GlobalCueRaw[] {
+  const priorClose = new Set(['Nifty 50', 'Sensex']);
+  return cues.map((cue) => ({
+    ...cue,
+    recency: cue.recency ?? (priorClose.has(cue.name) ? 'prior_close' : 'overnight'),
+    source: cue.source ?? 'market',
+  }));
 }
 
 function istTimestampISO(now = new Date()): string {
@@ -544,18 +627,19 @@ async function main() {
     console.warn('  ⚠ Yahoo Finance failed:', (e as Error).message);
   }
 
-  // Gift Nifty placeholder if not fetched
-  const hasGift = globalCues.some((c) => c.name.toLowerCase().includes('gift') || c.name.toLowerCase().includes('sgx'));
-  if (!hasGift) {
-    const nifty = globalCues.find((c) => c.name === 'Nifty 50');
-    if (nifty) {
-      globalCues.push({
-        name: 'Gift Nifty',
-        value: Number((nifty.value - 15).toFixed(2)),
-        change: Number((nifty.change - 5).toFixed(2)),
-        change_pct: Number((nifty.change_pct - 0.02).toFixed(2)),
-        direction: nifty.change_pct > 0 ? 'up' : 'down',
-      });
+  globalCues = tagCueRecency(globalCues);
+
+  const nifty = globalCues.find((c) => c.name === 'Nifty 50');
+  if (nifty) {
+    const gift = await fetchGiftNifty(nifty.value);
+    const openingCue = gift ?? buildImpliedOpenProxy(globalCues);
+    if (openingCue) {
+      globalCues.push(openingCue);
+      console.log(
+        `  ${openingCue.name}: ${openingCue.change_pct >= 0 ? '+' : ''}${openingCue.change_pct}% (${openingCue.source})`
+      );
+    } else {
+      console.warn('  ⚠ Opening gap cue unavailable — no GIFT Nifty and insufficient proxy inputs');
     }
   }
 

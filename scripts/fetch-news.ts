@@ -18,7 +18,43 @@ const RSS_FEEDS = [
   // ── Financial / Markets ───────────────────────────────────────────────────
   {
     name: 'Economic Times Markets',
-    urls: ['https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms'],
+    urls: [
+      'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms',
+      'https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms',
+    ],
+  },
+  {
+    name: 'Business Standard Markets',
+    urls: ['https://www.business-standard.com/rss/markets-106.rss'],
+  },
+  {
+    name: 'Financial Express Markets',
+    urls: ['https://www.financialexpress.com/market/feed/'],
+  },
+  {
+    name: 'Business Today Markets',
+    urls: [
+      'https://www.businesstoday.in/rssfeeds/market.xml',
+      'https://www.businesstoday.in/rssfeeds/?id=home',
+    ],
+  },
+  {
+    name: 'CNBC-TV18 Markets',
+    urls: [
+      'https://www.cnbctv18.com/commonfeeds/v1/cne/rss/market.xml',
+      'https://www.cnbctv18.com/commonfeeds/v1/cne/rss/business.xml',
+    ],
+  },
+  {
+    name: 'NDTV Profit Markets',
+    urls: [
+      'https://www.ndtvprofit.com/feed',
+      'https://www.ndtvprofit.com/rss',
+    ],
+  },
+  {
+    name: 'Investing India News',
+    urls: ['https://in.investing.com/rss/news.rss'],
   },
   {
     name: 'LiveMint Markets',
@@ -86,7 +122,7 @@ const MARKET_KEYWORDS = [
   'inflation', 'gdp', 'cpi', 'pmi', 'earnings', 'results', 'profit', 'revenue',
   'quarter', 'q1', 'q2', 'q3', 'q4', 'fy', 'rupee', 'inr', 'usd', 'dollar',
   'crude', 'oil', 'gold', 'silver', 'metals', 'banking', 'npa', 'credit',
-  'merger', 'acquisition', 'stake', 'buyback', 'dividend', 'split',
+  'merger', 'acquisition', 'stake', 'buyback', 'dividend', 'stock split',
   'fed', 'federal reserve', 'interest rate', 'rate cut', 'rate hike',
   'budget', 'tax', 'gst', 'import', 'export', 'trade', 'tariff', 'duty',
 ];
@@ -125,10 +161,22 @@ function loadEnvFromFile(): void {
  * Running well before 02:00 UTC makes `to` lie in the future; RSS/Marketaux
  * items beyond that time are intentionally excluded by isInWindow().
  */
+function previousTradingDayCloseUtc(now = new Date()): Date {
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 10, 0, 0, 0));
+  d.setUTCDate(d.getUTCDate() - 1);
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() - 1);
+  return d;
+}
+
 function newsWindow(): { from: Date; to: Date } {
   const now = new Date();
+  const defaultMaxAgeHours = 18;
+  const maxAgeHours = Math.max(1, Number(process.env.NEWS_MAX_AGE_HOURS ?? defaultMaxAgeHours) || defaultMaxAgeHours);
+  const tradingClose = previousTradingDayCloseUtc(now);
+  const hoursSinceTradingClose = (now.getTime() - tradingClose.getTime()) / (60 * 60 * 1000);
+  const windowHours = Math.max(maxAgeHours, hoursSinceTradingClose);
   return {
-    from: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1, 10, 0, 0, 0)),
+    from: new Date(now.getTime() - windowHours * 60 * 60 * 1000),
     to:   new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),      2, 0, 0, 0)),
   };
 }
@@ -139,7 +187,7 @@ function newsWindow(): { from: Date; to: Date } {
  */
 function isInWindow(pubDate: string, from: Date, to: Date): boolean {
   const pub = new Date(pubDate);
-  if (isNaN(pub.getTime())) return true;
+  if (isNaN(pub.getTime())) return false;
   return pub >= from && pub <= to;
 }
 
@@ -368,17 +416,6 @@ function isMarketRelevant(item: NewsItem): boolean {
   return MARKET_KEYWORDS.some((kw) => text.includes(kw));
 }
 
-function isAfterYesterdayClose(pubDate: string): boolean {
-  const pub = new Date(pubDate);
-  if (isNaN(pub.getTime())) return true; // include if date unparseable
-  const now = new Date();
-  const cutoff = new Date(Date.UTC(
-    now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1,
-    10, 0, 0, 0,
-  ));
-  return pub >= cutoff;
-}
-
 // ── Dedupe / sort ─────────────────────────────────────────────────────────────
 // Provider priority (lower = kept in dedupe): rss > gnews > marketaux
 // Direct publisher feeds are most trusted; third-party aggregators are lowest.
@@ -389,19 +426,53 @@ const PROVIDER_RANK: Record<NewsItem['provider'], number> = {
 };
 
 function dedupeByTitle(items: NewsItem[]): NewsItem[] {
-  const bucket = new Map<string, NewsItem>();
+  const bucket: NewsItem[] = [];
   for (const item of items) {
-    const key = item.title.toLowerCase().replace(/\s+/g, ' ').slice(0, 60);
-    const prev = bucket.get(key);
-    if (!prev) {
-      bucket.set(key, item);
+    const existingIndex = bucket.findIndex((prev) => titleSimilarity(prev.title, item.title) >= 0.72);
+    if (existingIndex < 0) {
+      bucket.push(item);
       continue;
     }
+    const prev = bucket[existingIndex];
     if (PROVIDER_RANK[item.provider] < PROVIDER_RANK[prev.provider]) {
-      bucket.set(key, item);
+      bucket[existingIndex] = item;
     }
   }
-  return Array.from(bucket.values());
+  return bucket;
+}
+
+const STOPWORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'to', 'of', 'in', 'on', 'for', 'with', 'from',
+  'as', 'at', 'by', 'is', 'are', 'after', 'before', 'today', 'market', 'markets',
+]);
+
+function titleTokens(title: string): Set<string> {
+  const words = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !STOPWORDS.has(w));
+  return new Set(words);
+}
+
+function titleSimilarity(a: string, b: string): number {
+  const ta = titleTokens(a);
+  const tb = titleTokens(b);
+  if (ta.size === 0 || tb.size === 0) return 0;
+  let overlap = 0;
+  for (const t of ta) if (tb.has(t)) overlap++;
+  return overlap / Math.min(ta.size, tb.size);
+}
+
+function capPerSource(items: NewsItem[], maxPerSource: number): NewsItem[] {
+  const counts = new Map<string, number>();
+  return items.filter((item) => {
+    const key = item.source || item.provider;
+    const count = counts.get(key) ?? 0;
+    if (count >= maxPerSource) return false;
+    counts.set(key, count + 1);
+    return true;
+  });
 }
 
 function sortByNewest(items: NewsItem[]): NewsItem[] {
@@ -419,6 +490,7 @@ async function main() {
   const runStart = Date.now();
   // FETCH_NEWS_MAX_OUT: 0 or unset = no cap; positive integer = slice
   const maxOut = Number(process.env.FETCH_NEWS_MAX_OUT ?? 0) || 0;
+  const maxPerSource = Math.max(3, Number(process.env.FETCH_NEWS_MAX_PER_SOURCE ?? 12) || 12);
   const { from: winFrom, to: winTo } = newsWindow();
 
   console.log('════════════════════════════════════════════════════════');
@@ -477,7 +549,7 @@ async function main() {
   const afterDate = afterKeyword.filter((i) => isInWindow(i.pubDate, winFrom, winTo));
   console.log(`  After date filter  : ${afterDate.length}  (dropped ${afterKeyword.length - afterDate.length} out-of-window items [${winFrom.toISOString()} → ${winTo.toISOString()}])`);
 
-  const deduped = sortByNewest(dedupeByTitle(afterDate));
+  const deduped = capPerSource(sortByNewest(dedupeByTitle(afterDate)), maxPerSource);
   console.log(`  After dedupe       : ${deduped.length}  (dropped ${afterDate.length - deduped.length} duplicates)`);
 
   const finalItems = maxOut > 0 ? deduped.slice(0, maxOut) : deduped;

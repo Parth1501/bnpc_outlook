@@ -10,7 +10,6 @@
     "fetch-news": "tsx scripts/fetch-news.ts",
     "fetch-market": "tsx scripts/fetch-market-data.ts",
     "fetch-results": "tsx scripts/fetch-results.ts",
-    "fetch-policy": "tsx scripts/fetch-policy-notes.ts",
     "analyze": "tsx scripts/analyze.ts",
     "verify": "tsx scripts/verify-yesterday.ts",
     "pipeline": "tsx scripts/run-pipeline.ts"

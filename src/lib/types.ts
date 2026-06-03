@@ -35,6 +35,13 @@ export const GlobalCueSchema = z.object({
   change: z.number(),
   change_pct: z.number(),
   direction: CueDirectionSchema,
+  recency: z.enum(['prior_close', 'overnight']).optional(),
+  source: z.enum(['live', 'proxy', 'market', 'derived']).optional(),
+});
+
+export const FullDayRationaleSchema = z.object({
+  one_line: z.string().max(500),
+  factors_aligned: z.number().int().min(0).max(5).optional(),
 });
 
 export const KeyDriverSchema = z.object({
@@ -114,28 +121,8 @@ export const StockResultSchema = z.object({
   result_declared_at_ist: z.string().optional(),
 });
 
-export const PolicyCategorySchema = z.enum(['Taxation', 'Equity Market', 'FnO Market', 'Bond Market', 'Compliance', 'Other']);
-
-export const PolicyNoteSchema = z.object({
-  title: z.string(),
-  authority: z.string(),
-  category: PolicyCategorySchema,
-  fy: z.string(),
-  effective_from: z.string().optional(),
-  source_url: z.string(),
-  note: z.string(),
-});
-
-export const RetailPolicyImpactSchema = z.object({
-  title: z.string(),
-  category: PolicyCategorySchema,
-  fy: z.string(),
-  impact_on_retail: z.string(),
-  what_to_watch: z.string(),
-  source_url: z.string(),
-});
-
 export const AccuracyVerdictSchema = z.enum(['hit', 'soft_miss', 'hard_miss']);
+export const GradedVerdictSchema = z.enum(['opening', 'full_day']);
 
 export const AccuracyReviewSchema = z.object({
   yesterday_prediction: BiasSchema,
@@ -144,10 +131,13 @@ export const AccuracyReviewSchema = z.object({
   actual_direction: CueDirectionSchema,
   nifty_close: z.number(),
   correct: z.boolean(),
+  graded_verdict: GradedVerdictSchema.default('opening'),
   /** How many rubric factors aligned the way overall_bias leaned (from yesterday's file, if present). */
   factors_aligned_at_call: z.number().int().min(0).max(5).optional(),
   /** bias_confidence from yesterday's analysis when verify ran. */
   bias_confidence_at_call: BiasLabelConfidenceSchema.optional(),
+  /** Numeric full-day conviction at the time of the call, when full-day grading is used. */
+  full_day_confidence_at_call: z.number().min(0).max(100).optional(),
   /** hit = directionally right; soft_miss = wrong but low-confidence call; hard_miss = wrong with medium/high confidence. */
   verdict: AccuracyVerdictSchema.optional(),
 });
@@ -171,6 +161,11 @@ export const AnalysisSchema = z.object({
   /** Per-factor tilts and alignment count — must justify overall_bias. */
   bias_rationale: BiasRationaleSchema,
   confidence: z.number().min(0).max(100),
+  full_day_bias: BiasSchema.default('Neutral'),
+  full_day_confidence: z.number().min(0).max(100).default(45),
+  full_day_rationale: FullDayRationaleSchema.default({
+    one_line: 'Full-day view unavailable; treat as a low-conviction neutral outlook.',
+  }),
   headline_call: z.string().max(200),
   summary: z.string(),
   global_cues: z.array(GlobalCueSchema),
@@ -185,8 +180,6 @@ export const AnalysisSchema = z.object({
   risk_factors: z.array(z.string()),
   watchlist: z.array(WatchlistItemSchema),
   today_results: z.array(StockResultSchema).default([]),
-  policy_notes: z.array(PolicyNoteSchema).default([]),
-  retail_policy_impact: z.array(RetailPolicyImpactSchema).default([]),
   accuracy_review: AccuracyReviewSchema.optional(),
   india_vix: IndiaVixSnapshotSchema.nullish(),
 });
@@ -196,7 +189,9 @@ export type BiasHorizon = z.infer<typeof BiasHorizonSchema>;
 export type BiasLabelConfidence = z.infer<typeof BiasLabelConfidenceSchema>;
 export type FactorTilt = z.infer<typeof FactorTiltSchema>;
 export type BiasRationale = z.infer<typeof BiasRationaleSchema>;
+export type FullDayRationale = z.infer<typeof FullDayRationaleSchema>;
 export type AccuracyVerdict = z.infer<typeof AccuracyVerdictSchema>;
+export type GradedVerdict = z.infer<typeof GradedVerdictSchema>;
 export type Impact = z.infer<typeof ImpactSchema>;
 export type Direction = z.infer<typeof DirectionSchema>;
 export type CueDirection = z.infer<typeof CueDirectionSchema>;
@@ -210,9 +205,6 @@ export type CalendarEvent = z.infer<typeof CalendarEventSchema>;
 export type WatchlistItem = z.infer<typeof WatchlistItemSchema>;
 export type ResultTiming = z.infer<typeof ResultTimingSchema>;
 export type StockResult = z.infer<typeof StockResultSchema>;
-export type PolicyCategory = z.infer<typeof PolicyCategorySchema>;
-export type PolicyNote = z.infer<typeof PolicyNoteSchema>;
-export type RetailPolicyImpact = z.infer<typeof RetailPolicyImpactSchema>;
 export type AccuracyReview = z.infer<typeof AccuracyReviewSchema>;
 export type IndiaVixSnapshot = z.infer<typeof IndiaVixSnapshotSchema>;
 export type DailyAnalysis = z.infer<typeof AnalysisSchema>;

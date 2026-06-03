@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { mergeAnalysisDefaultsIntoClone } from '../src/lib/merge-analysis-for-parse';
-import { AnalysisSchema, type Bias, type BiasLabelConfidence } from '../src/lib/types';
+import { AnalysisSchema, type Bias } from '../src/lib/types';
 
 function prevWeekday(date: Date): Date {
   const d = new Date(date);
@@ -89,10 +89,10 @@ function isDirectionallyCorrect(bias: Bias, actual_pct: number, threshold: numbe
 
 function verdictFor(
   correct: boolean,
-  biasConfidence: BiasLabelConfidence | undefined,
+  fullDayConfidence: number | undefined,
 ): 'hit' | 'soft_miss' | 'hard_miss' {
   if (correct) return 'hit';
-  if (biasConfidence === 'low') return 'soft_miss';
+  if (fullDayConfidence == null || fullDayConfidence <= 50) return 'soft_miss';
   return 'hard_miss';
 }
 
@@ -137,20 +137,21 @@ async function main() {
   const actual_direction: 'up' | 'down' | 'flat' =
     Math.abs(change_pct) < THRESH ? 'flat' : change_pct > 0 ? 'up' : 'down';
 
-  const biasConfidence = analysis.bias_confidence;
-  const correct = isDirectionallyCorrect(analysis.overall_bias, change_pct, THRESH);
-  const verdict = verdictFor(correct, biasConfidence);
-  const factorsAlignedAtCall = analysis.bias_rationale.factors_aligned;
+  const fullDayConfidence = analysis.full_day_confidence;
+  const correct = isDirectionallyCorrect(analysis.full_day_bias, change_pct, THRESH);
+  const verdict = verdictFor(correct, fullDayConfidence);
+  const factorsAlignedAtCall = analysis.full_day_rationale.factors_aligned;
 
   const accuracyReview = {
-    yesterday_prediction: analysis.overall_bias,
+    yesterday_prediction: analysis.full_day_bias,
     yesterday_headline: analysis.headline_call,
     actual_move: change_pct,
     actual_direction,
     nifty_close: close,
     correct,
+    graded_verdict: 'full_day' as const,
     factors_aligned_at_call: factorsAlignedAtCall,
-    bias_confidence_at_call: biasConfidence,
+    full_day_confidence_at_call: fullDayConfidence,
     verdict,
   };
 

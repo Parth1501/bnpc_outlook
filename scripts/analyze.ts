@@ -39,24 +39,15 @@ type StockResult = {
   result_declared?: boolean;
   result_declared_at_ist?: string;
 };
-type PolicyNote = {
-  title: string;
-  authority: string;
-  category: 'Taxation' | 'Equity Market' | 'FnO Market' | 'Bond Market' | 'Compliance' | 'Other';
-  fy: string;
-  effective_from?: string;
-  source_url: string;
-  note: string;
+type MarketCue = {
+  name?: string;
+  value?: number | string;
+  change?: number;
+  change_pct?: number;
+  direction?: 'up' | 'down' | 'flat';
+  recency?: 'prior_close' | 'overnight';
+  source?: 'live' | 'proxy' | 'market' | 'derived';
 };
-type RetailPolicyImpact = {
-  title: string;
-  category: 'Taxation' | 'Equity Market' | 'FnO Market' | 'Bond Market' | 'Compliance' | 'Other';
-  fy: string;
-  impact_on_retail: string;
-  what_to_watch: string;
-  source_url: string;
-};
-
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = 'anthropic/claude-haiku-4.5';
 const JSON_SAFE_MODEL = 'google/gemini-2.5-flash';
@@ -71,7 +62,8 @@ const SYSTEM_PROMPT = [
   '',
   'ZERO FABRICATION: Never invent headlines, numbers, company names, ticker symbols, prices, percentages, earnings, EPS, PAT, YoY figures, or events.',
   'Do NOT use training-data knowledge to fill gaps. Do NOT merge information from two news items to create a claim neither item made alone.',
-  'Do NOT predict, forecast, or speculate ("will rise", "expected to", "likely to").',
+  'Do NOT fabricate or speculate about facts, numbers, headlines, targets, or trade outcomes.',
+  'Allowed exception: overall_bias and full_day_bias are editorial directional outlook labels, not price forecasts. Keep wording hedged ("tilts", "skews", "risk-on/off") and never provide targets, stop-losses, or buy/sell advice.',
   '',
   'HARD GROUNDING — company results:',
   '  You MAY cite a specific number (EPS, PAT, revenue, YoY %) for a company ONLY IF:',
@@ -103,17 +95,27 @@ const SYSTEM_PROMPT = [
   '',
   'Other rules: Use NSE symbols. Explain mechanisms. No buy/sell/target/stop-loss advice. Numeric confidence range 35–85.',
   '',
-  '## overall_bias — editorial protocol (NOT a price forecast)',
+  '## opening and full-day editorial protocol (NOT investment advice)',
   '',
-  'overall_bias is a pre-open editorial label over five named inputs. It is NOT investment advice, NOT a target, and NOT a recommendation to trade.',
-  'For this product, bias_horizon MUST always be the string "open" (tilt for the opening / first prints only — not the full session unless explicitly stated elsewhere).',
+  'overall_bias is the OPENING verdict: a pre-open editorial label for the gap / first prints only.',
+  'full_day_bias is the FULL-DAY verdict: an editorial label for likely session tilt across the full Indian trading day.',
+  'Both labels are outlooks, not investment advice, not targets, and not recommendations to trade.',
+  'For this product, bias_horizon MUST always be the string "open" because overall_bias is the opening verdict.',
   '',
   'Rubric factors (assign each factor tilt: positive | negative | neutral in bias_rationale):',
-  '  (1) news_tone — same-day market-moving stories: compare negative vs positive tone in <news> you rely on;',
-  '  (2) global_cues — US close, SGX Nifty if present, Asian direction from <global_cues> names/directions;',
+  '  (1) news_tone — FORWARD catalysts only: results due today, guidance, regulation, deals, upgrades/downgrades, supply/demand shocks. Treat recap/wrap stories ("ended higher", "rallied", "fell yesterday") as background, not forward catalysts;',
+  '  (2) global_cues — overnight cues only from <cue_recency>.overnight: US close, Asian direction, real Gift Nifty, or "Implied open (proxy)". Never let prior-close Nifty/Sensex direction push this factor;',
   '  (3) fii_dii — net flow direction and magnitude vs recent context from <fii_dii> (use sign and rough scale; do not invent numbers not in input);',
   '  (4) vix — India VIX level and direction vs prior snapshot from <india_vix> (if null, set vix tilt neutral and do not invent VIX);',
   '  (5) calendar — high-impact events pending today from <economic_calendar>.',
+  '',
+  'ALL-SECTOR CONTRADICTION RULE:',
+  '  For every sector independently, today\'s forward catalyst overrides yesterday\'s price action. If a sector rallied yesterday but today has negative forward news, mark it Negative/Mixed based on today, not yesterday. If it fell yesterday but has positive forward news today, mark it Positive/Mixed based on today. This applies to Banking, Financial Services, IT, Pharma, FMCG, Auto, Energy, Metals, Infrastructure, Realty, and any other sector you mention.',
+  '',
+  'FULL-DAY VERDICT:',
+  '  Build full_day_bias from forward catalysts across the whole session: sector news, results due during/post-market, economic-calendar events during the day, FII/DII trend, and ongoing global risk drift. Gift Nifty or implied-open tells the open, not the full-day verdict by itself.',
+  '  Set full_day_confidence 35–85 based on driver alignment and data quality. Thin/conflicted data must stay low/medium conviction.',
+  '  full_day_rationale.one_line must name the dominant full-day drivers in plain English.',
   '',
   'Label selection (same inputs → same label; default to Neutral when conflicted or weak):',
   '  - Neutral: factors conflict, or fewer than 3 of 5 share the same directional lean, or data is too thin to lean.',
@@ -178,6 +180,7 @@ type AnalysisInput = {
   yesterday: string;
   news: unknown[];
   globalCues: unknown[];
+  cueRecency: Record<string, string[]>;
   fiiDii: unknown;
   indiaVix: unknown;
   calendar: unknown[];
@@ -293,6 +296,12 @@ function buildUserPrompt(input: AnalysisInput): string {
       one_line: 'string max 500 chars',
     },
     confidence: '0..100',
+    full_day_bias: 'Strongly Bullish|Bullish|Neutral|Bearish|Strongly Bearish',
+    full_day_confidence: '0..100',
+    full_day_rationale: {
+      one_line: 'string max 500 chars',
+      factors_aligned: 'integer 0..5 optional',
+    },
     headline_call: 'string max 200 chars',
     summary: 'string',
     key_drivers: [
@@ -344,6 +353,7 @@ Global cues and FII/DII numbers are snapshots from YOUR data pipeline fetch time
 Use these inputs:
 <news>${JSON.stringify(input.news)}</news>
 <global_cues>${JSON.stringify(input.globalCues)}</global_cues>
+<cue_recency>${JSON.stringify(input.cueRecency)}</cue_recency>
 <india_vix>${JSON.stringify(input.indiaVix)}</india_vix>
 <fii_dii>${JSON.stringify(input.fiiDii)}</fii_dii>
 <economic_calendar>${JSON.stringify(input.calendar)}</economic_calendar>
@@ -355,7 +365,10 @@ Rules:
 - Return valid JSON only, matching schema exactly.
 - bias_horizon MUST be "open" for this product (pre-open / opening bias only).
 - Apply the overall_bias rubric in the system prompt: set bias_rationale tilts and factors_aligned consistently with overall_bias and bias_confidence.
+- Produce BOTH verdicts: overall_bias is the opening verdict; full_day_bias and full_day_confidence are the whole-session outlook.
 - Keep global_cues, fii_dii, economic_calendar, today_results unchanged from input.
+- Use <cue_recency>.overnight only for the global_cues factor. Treat <cue_recency>.prior_close names as stale prior-session context, not forward signals.
+- For sector_impact, ignore yesterday's rally/fall when it conflicts with today's forward news. This rule applies to every sector, not only IT.
 - HARD GROUNDING: For Nifty/Sensex/Dow/Nasdaq/Brent/Gold/USD-INR/US 10Y/Nikkei etc., quote percentages and levels ONLY from <global_cues> (match by name). Do not substitute other figures from memory or news.
 - India VIX: data in <india_vix> is factual from the snapshot (or null if unavailable). Reference it in key_drivers or risk_factors when relevant. Never invent VIX levels or percentages.
 - HARD GROUNDING: For company results (EPS, PAT, YoY revenue/profit margin commentary), you MAY use explicit numbers ONLY if:
@@ -378,10 +391,11 @@ ${JSON.stringify(shape)}
 `;
 }
 
-// ANALYZE_NEWS_COMPACT_LIMIT: unset or 0 = send all items (higher tokens/cost).
-// Set to a positive integer (e.g. 60) to cap the list sent to the LLM.
+// ANALYZE_NEWS_COMPACT_LIMIT: default 70 after upstream dedupe/source caps.
+// Set to 0 to send all items (higher tokens/cost).
 function compactNewsForPrompt(raw: unknown[], limit?: number): Array<Record<string, string>> {
-  const envLimit = Number(process.env.ANALYZE_NEWS_COMPACT_LIMIT ?? 0) || 0;
+  const envRaw = process.env.ANALYZE_NEWS_COMPACT_LIMIT;
+  const envLimit = envRaw == null ? 70 : Number(envRaw) || 0;
   const effective = limit ?? (envLimit > 0 ? envLimit : raw.length);
   const sorted = [...raw].sort((a, b) => {
     const ta = new Date(String((a as Record<string, unknown>).pubDate ?? '')).getTime();
@@ -567,6 +581,56 @@ function enrichCalendarWithCountry(
   });
 }
 
+function cueRecencySnapshot(cues: unknown[]): Record<string, string[]> {
+  const out: Record<string, string[]> = { overnight: [], prior_close: [] };
+  for (const cue of cues as MarketCue[]) {
+    const name = String(cue.name ?? '').trim();
+    if (!name) continue;
+    const bucket = cue.recency === 'prior_close' ? 'prior_close' : 'overnight';
+    out[bucket].push(name);
+  }
+  return out;
+}
+
+function computeGlobalCueTilt(cues: unknown[]): 'positive' | 'negative' | 'neutral' {
+  const weighted = (cues as MarketCue[])
+    .filter((c) => c.recency === 'overnight' && typeof c.change_pct === 'number' && Number.isFinite(c.change_pct))
+    .map((c) => {
+      const name = String(c.name ?? '').toLowerCase();
+      const weight =
+        name.includes('implied open') || name.includes('gift') ? 1.8 :
+        name.includes('nasdaq') ? 1.25 :
+        name.includes('dow') || name.includes('nikkei') ? 1.0 :
+        name.includes('usd/inr') || name.includes('brent') || name.includes('10y') ? -0.65 :
+        0.5;
+      return { pct: c.change_pct ?? 0, weight };
+    });
+  if (weighted.length === 0) return 'neutral';
+  const score = weighted.reduce((sum, x) => sum + x.pct * x.weight, 0);
+  if (score > 0.25) return 'positive';
+  if (score < -0.25) return 'negative';
+  return 'neutral';
+}
+
+function clampFullDayConfidence(confidence: number, aligned?: number): number {
+  const safe = Number.isFinite(confidence) ? Math.round(confidence) : 45;
+  if (aligned == null || aligned <= 2) return Math.min(65, Math.max(35, safe));
+  if (aligned === 3) return Math.min(75, Math.max(35, safe));
+  return Math.min(85, Math.max(35, safe));
+}
+
+function applyDeterministicCueGuardrails(
+  analysis: ReturnType<typeof AnalysisSchema.parse>,
+  cues: unknown[]
+): void {
+  const globalTilt = computeGlobalCueTilt(cues);
+  analysis.bias_rationale.global_cues = globalTilt;
+  analysis.full_day_confidence = clampFullDayConfidence(
+    analysis.full_day_confidence,
+    analysis.full_day_rationale.factors_aligned
+  );
+}
+
 function normalizeTiming(value: unknown): StockResult['timing'] {
   const v = String(value ?? '').trim().toLowerCase();
   if (v === 'during market') return 'During Market';
@@ -619,94 +683,6 @@ function normalizeResults(raw: unknown): StockResult[] {
   });
 }
 
-function normalizePolicyCategory(value: unknown): PolicyNote['category'] {
-  const v = String(value ?? '').trim();
-  if (
-    v === 'Taxation' ||
-    v === 'Equity Market' ||
-    v === 'FnO Market' ||
-    v === 'Bond Market' ||
-    v === 'Compliance' ||
-    v === 'Other'
-  ) return v;
-  return 'Other';
-}
-
-function normalizePolicyNotes(raw: unknown): PolicyNote[] {
-  if (!Array.isArray(raw)) return [];
-  const out: PolicyNote[] = [];
-  const seen = new Set<string>();
-  for (const x of raw) {
-    const r = x as Record<string, unknown>;
-    const title = String(r.title ?? '').trim();
-    const sourceUrl = String(r.source_url ?? '').trim();
-    if (!title || !sourceUrl) continue;
-    const key = `${title.toLowerCase().slice(0, 120)}|${sourceUrl}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({
-      title,
-      authority: String(r.authority ?? 'Official'),
-      category: normalizePolicyCategory(r.category),
-      fy: String(r.fy ?? 'FY Unknown'),
-      effective_from: r.effective_from == null ? undefined : String(r.effective_from),
-      source_url: sourceUrl,
-      note: String(r.note ?? '').trim().slice(0, 300),
-    });
-  }
-  return out;
-}
-
-function normalizeRetailPolicyImpact(raw: unknown, notes: PolicyNote[]): RetailPolicyImpact[] {
-  if (!Array.isArray(raw)) return [];
-  const noteByUrl = new Map(notes.map((n) => [n.source_url, n]));
-  const out: RetailPolicyImpact[] = [];
-  const seen = new Set<string>();
-  for (const x of raw) {
-    const r = x as Record<string, unknown>;
-    const sourceUrl = String(r.source_url ?? '').trim();
-    const title = String(r.title ?? '').trim();
-    if (!sourceUrl || !title) continue;
-    const noteRef = noteByUrl.get(sourceUrl);
-    if (!noteRef) continue;
-    const key = `${sourceUrl}|${title.toLowerCase().slice(0, 120)}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({
-      title,
-      category: normalizePolicyCategory(r.category),
-      fy: String(r.fy ?? noteRef.fy ?? 'FY Unknown'),
-      impact_on_retail: String(r.impact_on_retail ?? '').trim().slice(0, 220),
-      what_to_watch: String(r.what_to_watch ?? '').trim().slice(0, 160),
-      source_url: sourceUrl,
-    });
-  }
-  return out;
-}
-
-function fallbackRetailPolicyImpact(notes: PolicyNote[]): RetailPolicyImpact[] {
-  return notes
-    .filter((n) => n.category !== 'Other')
-    .slice(0, 10)
-    .map((n) => ({
-      title: n.title,
-      category: n.category,
-      fy: n.fy,
-      impact_on_retail:
-        n.category === 'Taxation'
-          ? 'Potential tax treatment impact for retail gains/loss planning; verify applicability before trades.'
-          : n.category === 'FnO Market'
-            ? 'May affect derivative participation via margin/risk/compliance changes for retail traders.'
-            : n.category === 'Bond Market'
-              ? 'Can influence debt yields and fund positioning, indirectly affecting allocation decisions.'
-              : n.category === 'Equity Market'
-                ? 'May alter trading/disclosure/listing rules relevant to retail stock participation.'
-                : 'Could change compliance or process requirements that impact retail execution.',
-      what_to_watch: 'Read official circular summary and effective date before taking position changes.',
-      source_url: n.source_url,
-    }));
-}
-
 function buildEmergencyAnalysis(input: {
   date: string;
   globalCues: unknown[];
@@ -740,6 +716,12 @@ function buildEmergencyAnalysis(input: {
       one_line: 'Emergency fallback — model output invalid; rubric not applied. Treat opening bias as unclassified.',
     },
     confidence: 45,
+    full_day_bias: 'Neutral' as const,
+    full_day_confidence: 45,
+    full_day_rationale: {
+      one_line: 'Emergency fallback — model output invalid; full-day outlook is unclassified.',
+      factors_aligned: 0,
+    },
     headline_call: 'Mixed cues; follow data-driven risk management at open.',
     summary: 'Automated fallback analysis generated because model output was unavailable/invalid. Use global cues and flows for opening bias and wait for confirmation after first 30 minutes.',
     global_cues: Array.isArray(input.globalCues) ? input.globalCues : [],
@@ -771,8 +753,6 @@ function buildEmergencyAnalysis(input: {
     risk_factors: ['R1: If global risk sentiment worsens pre-open, initial downside may extend.', 'R2: If yields/USD spike, risk assets can see pressure.'],
     watchlist: [],
     today_results: input.todayResults,
-    policy_notes: [],
-    retail_policy_impact: [],
     accuracy_review: input.yesterdayReview ?? undefined,
   };
   applyPipelineIndiaVix(analysis, input.rawMarketRecord);
@@ -813,6 +793,7 @@ async function main() {
     yesterday,
     news: compactNews,
     globalCues: market.global_cues,
+    cueRecency: cueRecencySnapshot(market.global_cues),
     fiiDii: market.fii_dii,
     indiaVix: market.india_vix ?? null,
     calendar: normalizedCalendar,
@@ -907,9 +888,8 @@ async function main() {
   }
   finalData.economic_calendar = enrichCalendarWithCountry(finalData.economic_calendar, normalizedCalendar);
   finalData.today_results = normalizedResults;
-  finalData.policy_notes = [];
-  finalData.retail_policy_impact = [];
   applyPipelineIndiaVix(finalData, marketRecord);
+  applyDeterministicCueGuardrails(finalData, market.global_cues);
 
   const stripped = sanitizeMisleadingVerifiedPhrasing(finalData);
   if (stripped > 0) {

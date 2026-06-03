@@ -1,4 +1,4 @@
-import type { Bias, BiasRationale } from './types';
+import type { Bias, BiasRationale, FullDayRationale } from './types';
 
 /** Used when archives or LLM output omit or partially fill bias rationale. */
 export const DEFAULT_BIAS_RATIONALE: BiasRationale = {
@@ -80,6 +80,29 @@ export function normalizeBiasFieldsForAnalysisParse(o: Record<string, unknown>):
     else bc = 'low';
   }
   o.bias_confidence = bc;
+
+  o.full_day_bias = normalizeOverallBiasString(o.full_day_bias ?? o.overall_bias);
+
+  const rawFullDayConfidence = Number(o.full_day_confidence ?? o.confidence);
+  o.full_day_confidence = Number.isFinite(rawFullDayConfidence)
+    ? Math.min(100, Math.max(0, Math.round(rawFullDayConfidence)))
+    : 45;
+
+  const fullDay = o.full_day_rationale;
+  if (typeof fullDay !== 'object' || fullDay === null || Array.isArray(fullDay)) {
+    o.full_day_rationale = {
+      one_line: 'Legacy file — full-day view derived from opening call.',
+      factors_aligned: rationale.factors_aligned,
+    } satisfies FullDayRationale;
+  } else {
+    const r = fullDay as Record<string, unknown>;
+    const n = Number(r.factors_aligned);
+    const oneLine = String(r.one_line ?? '').trim().slice(0, 500);
+    o.full_day_rationale = {
+      one_line: oneLine.length > 0 ? oneLine : 'Legacy file — full-day view derived from opening call.',
+      factors_aligned: Number.isFinite(n) ? Math.min(5, Math.max(0, Math.round(n))) : undefined,
+    } satisfies FullDayRationale;
+  }
 }
 
 export function mergeAnalysisDefaultsIntoClone(raw: unknown): Record<string, unknown> {

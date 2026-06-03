@@ -21,13 +21,13 @@ if (!analysis) {
   return new Response('No analysis data found.', { status: 503 });
 }
 
-const ogDescription = `${analysis.overall_bias} | AI conviction ${analysis.confidence}/100 | ${analysis.headline_call}`;
+const ogDescription = `Opening ${analysis.overall_bias} | Full day ${analysis.full_day_bias} (${analysis.full_day_confidence}/100 conviction) | ${analysis.headline_call}`;
 ---
 
 <Layout
   title={`BNPC Market Outlook — ${analysis.date}`}
   description={ogDescription}
-  ogTitle={`India Market Outlook ${analysis.date}: ${analysis.overall_bias}`}
+  ogTitle={`India Market Outlook ${analysis.date}: Open ${analysis.overall_bias}, Full Day ${analysis.full_day_bias}`}
   analysis={analysis}
 >
   <Header currentPath="/" />

@@ -7,7 +7,6 @@ export function fmtNum(n: number, decimals = 2): string {
 
 export function fmtCrore(n: number): string {
   const abs = Math.abs(n);
-  const sign = n < 0 ? '-' : '+';
   return `${n < 0 ? '-' : '+'}₹${abs.toLocaleString('en-IN')} Cr`;
 }
 

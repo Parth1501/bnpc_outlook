@@ -573,6 +573,7 @@ async function main() {
   const fallbackNews = maybeLoadJson<NewsItem[]>('raw-news.json') ?? [];
   const mergedNews = [...liveNews, ...fallbackNews];
   const regexNewsMetrics = buildNewsMetricsBySymbolStrict(mergedNews, symbols, companyBySymbol);
+  const keywordNewsMetrics = buildNewsMetricsBySymbol(mergedNews);
   let llmNewsMetrics = new Map<string, NewsMetrics>();
   try {
     llmNewsMetrics = await extractResultMetricsWithLlm(symbols, companyBySymbol, mergedNews);
@@ -614,7 +615,7 @@ async function main() {
     const actualEps = isFiniteNumber(finnhub?.epsActual) ? finnhub.epsActual : null;
     const estimateRevenue = isFiniteNumber(finnhub?.revenueEstimate) ? finnhub.revenueEstimate : null;
     const actualRevenue = isFiniteNumber(finnhub?.revenueActual) ? finnhub.revenueActual : null;
-    const fromNews = llmNewsMetrics.get(symbol) ?? regexNewsMetrics.get(symbol) ?? buildNewsMetricsBySymbol(mergedNews).get(symbol);
+    const fromNews = llmNewsMetrics.get(symbol) ?? regexNewsMetrics.get(symbol) ?? keywordNewsMetrics.get(symbol);
     const newsHasFigures =
       fromNews != null &&
       (fromNews.net_profit_actual != null ||
@@ -630,7 +631,7 @@ async function main() {
       timing,
       expected_time_ist: parsed ? parsed.hhmm : undefined,
       note: purpose || bm || 'Financial results related board update',
-      metric_unit: 'million',
+      metric_unit: 'crore',
       estimate_eps: estimateEps,
       actual_eps: actualEps,
       estimate_revenue: estimateRevenue,
@@ -640,7 +641,7 @@ async function main() {
       net_profit_yoy_pct: fromNews?.net_profit_yoy_pct ?? null,
       ebitda_actual: fromNews?.ebitda_actual ?? null,
       ebitda_yoy_pct: fromNews?.ebitda_yoy_pct ?? null,
-      currency: 'USD',
+      currency: 'INR',
       result_declared: hasAnyActual,
       result_declared_at_ist: toISTDateTimeLabel(finnhub?.date) ?? fromNews?.result_declared_at_ist,
     };
